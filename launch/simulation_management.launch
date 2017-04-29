@@ -1,0 +1,25 @@
+<launch>
+
+   <!-- Arguments that are passed from the top launchfile -->
+   <arg name="objects_ground_truth_topic_with_ns" />
+   <arg name="desired_motion_topic_with_ns" />
+   <arg name="object_initialization_topic_with_ns" />
+
+   <arg name="fixed_frame" />
+
+   <!-- Launch Time Management -->
+   <node pkg="simulation_management_ros_tool" type="time_mgmt" name="time_mgmt" output="screen">
+   </node>
+
+
+   <!-- Launch Localization Management -->
+   <node pkg="simulation_management_ros_tool" type="localization_mgmt" name="localization_mgmt" output="screen">
+        <remap from="default_desired_motion_in_topic_with_ns" to="$(arg desired_motion_topic_with_ns)"/>
+        <remap from="default_objects_out_topic_with_ns" to="$(arg objects_ground_truth_topic_with_ns)"/>
+        <remap from="default_object_initialization_in_topic_with_ns" to="$(arg object_initialization_topic_with_ns)"/>
+
+	      <param name="verbosity" value="info" />
+	      <param name="tf_topic_map" value="$(arg fixed_frame)" />
+   </node>
+
+</launch>

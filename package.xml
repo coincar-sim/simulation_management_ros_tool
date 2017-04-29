@@ -1,0 +1,31 @@
+<package format="2">
+  <name>simulation_management_ros_tool</name>
+  <version>0.9.0</version>
+  <description>Main Part of the Simulation Framework</description>
+
+  <license>contact-the-maintainer</license>
+  <maintainer email="maximilian.naumann@kit.edu">Maximilian Naumann</maintainer>
+
+  <!-- ROS dependencies -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>mrt_cmake_modules</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <test_depend>rostest</test_depend>
+  <build_depend>roscpp</build_depend>
+  <depend>roslib</depend>
+  <depend>nodelet</depend>
+
+  <depend>dynamic_reconfigure</depend>
+  <depend>rosparam_handler</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>eigen_conversions</depend>
+
+  <depend>automated_driving_msgs</depend>
+  <depend>simulation_only_msgs</depend>
+
+  <!-- non-ROS dependencies -->
+  <test_depend>gtest</test_depend>
+  <depend>eigen</depend>
+
+</package>
