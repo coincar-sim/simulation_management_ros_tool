@@ -8,7 +8,7 @@ mkdir src
 cd src
 echo "Cloning packages..."
 git clone https://github.com/KIT-MRT/mrt_cmake_modules.git
-git clone https://git.rwth-aachen.de/spp1835/rosparam_handler.git
+git clone https://github.com/cbandera/rosparam_handler.git
 git clone https://github.com/fzi-forschungszentrum-informatik/automated_driving_msgs.git
 git clone https://github.com/gareth-cross/rviz_satellite.git
 git clone https://git.rwth-aachen.de/spp1835/simulation_only_msgs

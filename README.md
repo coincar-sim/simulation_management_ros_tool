@@ -38,6 +38,7 @@ Parts of this Framework
 * object_state_array_rviz_plugin_ros
 
 ## Usage
+#### 1a) Set up and build the workspace yourself
 * set up a catkin workspace
   * ` $ mkdir catkin_ws && cd catkin_ws`
   * `catkin_ws$ wstool init`
@@ -49,8 +50,17 @@ Parts of this Framework
   * `catkin_ws$ catkin build`
 * source the build-files
   * `catkin_ws$ source devel/setup.bash`
+
+or
+#### 1b) Use the script
+* do the above steps by starting
+  * ` $ ./setup_workspace.sh`
+
+and then
+#### 2) Launch the framework
 * start the simulation framework by launching the main launchfile:
   * `catkin_ws$ roslaunch src/simulation_initialization_ros_tool/launch/_whole_framework.launch`
+* for details, see package simulation_initialization_ros_tool
 
 ## License
 Contact the maintainer of the respective package for license issues.
