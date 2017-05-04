@@ -13,6 +13,8 @@ In order to use the framework, you need to install the following packages (insta
   * `ros-kinetic-desktop-full`
   * `ros-kinetic-geodesy`
   * `ros-kinetic-tf2-geometry-msgs`
+* Catkin Tools (see http://catkin-tools.readthedocs.io/en/latest/index.html)
+  * `python-catkin-tools`
 * System Libraries
   * `libpugixml-dev`
   * boost and eigen are installed with ROS
