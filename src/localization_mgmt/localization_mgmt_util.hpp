@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <cmath>
 #include <tuple>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/Pose.h>
@@ -41,5 +42,7 @@ boost::array<double, 36> covUnknown();
 ros::Time rosTimeFromNsec(const uint64_t nsec);
 
 void checkScaleForInterpolation(const double scale);
+
+bool deltaTrajectoryContainsNANs(const simulation_only_msgs::DeltaTrajectoryWithID& dtwid);
 
 } // namespace localization_mgmt_util

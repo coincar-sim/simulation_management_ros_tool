@@ -38,6 +38,7 @@ Parts of this Framework
 * sim_lanelet
 * sim_lanelet_visualization_ros_tool
 * object_state_array_rviz_plugin_ros
+* lanelet_rviz_plugin_ros
 
 ## Usage
 #### 1a) Set up and build the workspace yourself

@@ -21,6 +21,12 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
 void DynamicObject::newDeltaTrajectory(
     const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajectory,
     const ros::Time& timestamp) {
+    if (localization_mgmt_util::deltaTrajectoryContainsNANs(deltaTrajectory)){
+        ROS_WARN_THROTTLE(1,
+                          "Not regarding desired motion of object with id %s as it contains NANs",
+                          std::to_string(objectID_).c_str());
+        return;
+    }
     interpolatePose(timestamp);
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
@@ -56,6 +62,7 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
                           "occured: \"%s\")",
                           std::to_string(objectID_).c_str(),
                           e.what());
+        currTimeNsec_ = timestamp.toNSec();
     }
 }
 

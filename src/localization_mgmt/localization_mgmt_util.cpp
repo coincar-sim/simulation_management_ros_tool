@@ -159,4 +159,20 @@ void checkScaleForInterpolation(const double scale) {
 	}
 }
 
+bool deltaTrajectoryContainsNANs(const simulation_only_msgs::DeltaTrajectoryWithID& dtwid){
+    for (size_t i = 0; i < dtwid.delta_poses_with_delta_time.size() - 1; i++) {
+        const automated_driving_msgs::DeltaPoseWithDeltaTime& dpwdt = dtwid.delta_poses_with_delta_time[i];
+        if (std::isnan(dpwdt.delta_pose.position.x) || std::isnan(dpwdt.delta_pose.position.y) || std::isnan(dpwdt.delta_pose.position.z)){
+            return true;
+        }
+        if (std::isnan(dpwdt.delta_pose.orientation.x) || std::isnan(dpwdt.delta_pose.orientation.y) || std::isnan(dpwdt.delta_pose.orientation.z) || std::isnan(dpwdt.delta_pose.orientation.w)){
+            return true;
+        }
+        if (std::isnan(dpwdt.delta_time.toSec())){
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace localization_mgmt_util
