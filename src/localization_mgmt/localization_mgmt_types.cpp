@@ -89,7 +89,7 @@ geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
     geometry_msgs::TransformStamped tfs;
     tfs.header.stamp = localization_mgmt_util::rosTimeFromNsec(currTimeNsec_);
     tfs.header.frame_id = frameId_;
-    tfs.child_frame_id = childFrameId_;
+    tfs.child_frame_id = "visualization_only__" + childFrameId_;
     tfs.transform = localization_mgmt_util::transformFromPose(currPose_);
     return tfs;
     // check if contains NANs
