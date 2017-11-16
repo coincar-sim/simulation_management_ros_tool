@@ -10,23 +10,22 @@ namespace simulation_management_ros_tool {
 
 class TimeMgmt {
 public:
-	TimeMgmt(ros::NodeHandle, ros::NodeHandle);
+    TimeMgmt(ros::NodeHandle, ros::NodeHandle);
 
 private:
-	void timerCallbackSim(const ros::WallTimerEvent&);
-	void reconfigureRequest(TimeMgmtConfig&, uint32_t);
+    void timerCallbackSim(const ros::WallTimerEvent&);
+    void reconfigureRequest(TimeMgmtConfig&, uint32_t);
 
-	dynamic_reconfigure::Server<TimeMgmtConfig> reconfigSrv_; // Dynamic reconfiguration service
+    dynamic_reconfigure::Server<TimeMgmtConfig> reconfigSrv_; // Dynamic reconfiguration service
 
-	TimeMgmtParameters params_;
+    TimeMgmtParameters params_;
 
-	ros::Publisher clockPub_;
-	ros::WallTimer timer_;
-	rosgraph_msgs::Clock msgClock_;
-	ros::WallTime startWallTime_;
-	ros::Time startSimTime_;
-	ros::Time currentSimTime_;
-
+    ros::Publisher clockPub_;
+    ros::WallTimer timer_;
+    rosgraph_msgs::Clock msgClock_;
+    ros::WallTime startWallTime_;
+    ros::Time startSimTime_;
+    ros::Time currentSimTime_;
 };
 
 } // namespace simulation_management_ros_tool

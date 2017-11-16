@@ -18,10 +18,9 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
 }
 
 
-void DynamicObject::newDeltaTrajectory(
-    const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajectory,
-    const ros::Time& timestamp) {
-    if (localization_mgmt_util::deltaTrajectoryContainsNANs(deltaTrajectory)){
+void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajectory,
+                                       const ros::Time& timestamp) {
+    if (localization_mgmt_util::deltaTrajectoryContainsNANs(deltaTrajectory)) {
         ROS_WARN_THROTTLE(1,
                           "Not regarding desired motion of object with id %s as it contains NANs",
                           std::to_string(objectID_).c_str());
@@ -49,8 +48,7 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
 
         geometry_msgs::Pose p0 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i].delta_pose;
 
-        geometry_msgs::Pose p1 =
-            deltaTrajectoryWithID_.delta_poses_with_delta_time[i + 1].delta_pose;
+        geometry_msgs::Pose p1 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i + 1].delta_pose;
         geometry_msgs::Pose newDeltaPose = localization_mgmt_util::interpolatePose(p0, p1, scale);
 
         currTimeNsec_ = timestamp.toNSec();
@@ -110,14 +108,13 @@ void DynamicObjectArray::initializeObject(const simulation_only_msgs::ObjectInit
                                           const ros::Time& timestamp) {
 
     if (checkObjectExistence(msg.object_id)) {
-        throw std::runtime_error("Object with id " + std::to_string(msg.object_id) +
-                                 " already initialized");
+        throw std::runtime_error("Object with id " + std::to_string(msg.object_id) + " already initialized");
     }
 
     if (!(msg.header.frame_id == frameId_)) {
-        ROS_ERROR_STREAM(
-          "Object with id " + std::to_string(msg.object_id) +
-          " not initialized: its initial position is in frame " + msg.header.frame_id + " but should be in " + frameId_);
+        ROS_ERROR_STREAM("Object with id " + std::to_string(msg.object_id) +
+                         " not initialized: its initial position is in frame " + msg.header.frame_id +
+                         " but should be in " + frameId_);
     }
 
     dyn_obj_ptr_t& currentObjectPtr = objectStateMap_[msg.object_id];
