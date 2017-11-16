@@ -5,6 +5,7 @@ import roslib
 from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime
 from simulation_only_msgs.msg import  ObjectInitialization, DeltaTrajectoryWithID
 from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Point
 from std_msgs.msg import Header
@@ -12,6 +13,8 @@ from shape_msgs.msg import Mesh
 from shape_msgs.msg import MeshTriangle
 import rospy
 import tf
+import tf2_ros
+import tf2_geometry_msgs
 
 # Regular Python Dependencies
 import time
@@ -118,6 +121,8 @@ if __name__ == '__main__':
 
     object_id = rospy.get_param("~object_id")
     velocity = rospy.get_param("~initial_v")
+    frame_id_initial_position = rospy.get_param("~frame_id_initial_position")
+    frame_id_loc_mgmt = rospy.get_param("~frame_id_loc_mgmt")
     topic = rospy.get_param("~object_initialization_topic")
     publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6 )
 
@@ -127,17 +132,39 @@ if __name__ == '__main__':
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
 
+    if not frame_id_initial_position == frame_id_loc_mgmt:
+        tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0)) #tf buffer length
+        tf_listener = tf2_ros.TransformListener(tf_buffer)
+
     time.sleep(3)
 
     obj_init = ObjectInitialization()
     obj_init.header = Header()
+    obj_init.header.frame_id = frame_id_loc_mgmt
     obj_init.object_id = object_id
 
     obj_init.hull = hull
 
+    pose_stamped = PoseStamped()
+    pose_stamped.header.frame_id = frame_id_initial_position
+    pose_stamped.pose.position = position_from_x_y(x_start, y_start)
+    pose_stamped.pose.orientation = orientation_from_yaw(0.0)
+
+    if not frame_id_initial_position == frame_id_loc_mgmt:
+        rospy.logwarn("Transforming initial_pose of object " + str(object_id) + \
+                      " from frame " + frame_id_initial_position + " to "
+                      "frame " + frame_id_loc_mgmt)
+        transform = tf_buffer.lookup_transform(frame_id_loc_mgmt,
+                                               frame_id_initial_position, #source frame
+                                               rospy.Time(0), #get the tf at first available time
+                                               rospy.Duration(1.0)) #wait for 1 second
+        pose_transformed = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
+        pose_stamped = pose_transformed
+
+
     obj_init.initial_pose = Pose()
-    obj_init.initial_pose.position = position_from_x_y(x_start, y_start)
-    obj_init.initial_pose.orientation = orientation_from_yaw(0.0)
+    obj_init.initial_pose.position = pose_stamped.pose.position
+    obj_init.initial_pose.orientation = pose_stamped.pose.orientation
 
     obj_init.initial_delta_trajectory.object_id = object_id
 

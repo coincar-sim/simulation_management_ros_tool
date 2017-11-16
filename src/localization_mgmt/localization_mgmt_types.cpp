@@ -25,6 +25,7 @@ void DynamicObject::newDeltaTrajectory(
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
     startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
+    // check if delta pose contains NANs
 }
 
 void DynamicObject::interpolatePose(const ros::Time& timestamp) {
@@ -74,6 +75,7 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg() {
     os.motion_state.child_frame_id = childFrameId_;
     os.hull = hull_;
     return os;
+    // check if contains NANs
 }
 
 geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
@@ -83,6 +85,7 @@ geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
     tfs.child_frame_id = childFrameId_;
     tfs.transform = localization_mgmt_util::transformFromPose(currPose_);
     return tfs;
+    // check if contains NANs
 }
 
 
@@ -104,8 +107,15 @@ void DynamicObjectArray::initializeObject(const simulation_only_msgs::ObjectInit
                                  " already initialized");
     }
 
+    if (!(msg.header.frame_id == frameId_)) {
+        ROS_ERROR_STREAM(
+          "Object with id " + std::to_string(msg.object_id) +
+          " not initialized: its initial position is in frame " + msg.header.frame_id + " but should be in " + frameId_);
+    }
+
     dyn_obj_ptr_t& currentObjectPtr = objectStateMap_[msg.object_id];
     currentObjectPtr = std::make_shared<DynamicObject>(msg, timestamp, frameId_, objectsPrefixTf_);
+    // frameId_ must not be unique for all objects at initialization // transform from initial frameId to unique frameId of framework
 }
 
 void DynamicObjectArray::interpolatePoses(const ros::Time& timestamp) {
