@@ -54,7 +54,7 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
         geometry_msgs::Pose newDeltaPose = localization_mgmt_util::interpolatePose(p0, p1, scale);
 
         currTimeNsec_ = timestamp.toNSec();
-        currPose_ = localization_mgmt_util::calculatePose(poseAtStartOfDeltaTraj_, newDeltaPose);
+        currPose_ = localization_mgmt_util::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
 
     } catch (std::exception& e) {
         ROS_WARN_THROTTLE(1,

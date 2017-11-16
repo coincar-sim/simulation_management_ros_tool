@@ -23,6 +23,7 @@
 
   <depend>automated_driving_msgs</depend>
   <depend>simulation_only_msgs</depend>
+  <depend>simulation_utils</depend>
 
   <!-- non-ROS dependencies -->
   <test_depend>gtest</test_depend>

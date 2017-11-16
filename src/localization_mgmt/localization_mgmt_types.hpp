@@ -12,8 +12,8 @@
 #include "automated_driving_msgs/ObjectStateArray.h"
 #include "simulation_only_msgs/DeltaTrajectoryWithID.h"
 #include "simulation_only_msgs/ObjectInitialization.h"
+#include <simulation_utils/util_localization_mgmt.hpp>
 
-#include "localization_mgmt_util.hpp"
 
 namespace localization_mgmt_types {
 

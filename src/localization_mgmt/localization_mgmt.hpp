@@ -8,13 +8,13 @@
 #include <tf2_ros/transform_listener.h>
 
 #include "localization_mgmt_types.hpp"
-#include "localization_mgmt_util.hpp"
 #include "automated_driving_msgs/MotionPrediction.h"
 #include "automated_driving_msgs/MotionState.h"
 #include "automated_driving_msgs/ObjectStateArray.h"
 #include "simulation_only_msgs/DeltaTrajectoryWithID.h"
 #include "simulation_only_msgs/ObjectInitialization.h"
 #include "simulation_management_ros_tool/LocalizationMgmtParameters.h"
+#include <simulation_utils/util_localization_mgmt.hpp>
 
 namespace simulation_management_ros_tool {
 
