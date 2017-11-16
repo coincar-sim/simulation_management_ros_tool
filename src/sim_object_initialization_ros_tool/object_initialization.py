@@ -25,6 +25,8 @@ from math import cos, sin, atan2
 
 lat_list = []
 lon_list = []
+x_list = []
+y_list = []
 d_x_list = []
 d_y_list = []
 d_t_list = []
@@ -57,9 +59,8 @@ def import_hull(xml_file):
 
 def import_path(xml_file):
     e = xml.etree.ElementTree.parse(xml_file).getroot()
-    global lat_list, lon_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
-    x_list = []
-    y_list = []
+    global lat_list, lon_list, x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
+
 
     for node in e.findall('node'):
         lat_list.append(node.get('lat'))
@@ -68,19 +69,51 @@ def import_path(xml_file):
         x_list.append(x)
         y_list.append(y)
 
-    x_start = x_list[0]
-    y_start = y_list[0]
-    d_x_list.append(0)
-    d_y_list.append(0)
-    d_t_list.append(0)
+
+def set_start_and_delta_path(s_start_on_path):
+    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
+
+    i_start = 0
+    scale = 0.0
+
+    if s_start_on_path > 0.001:
+        found = False
+        d_s_list_ = [0.0]
+        for i in range(len(x_list)):
+            if i > 0:
+                d_s = numpy.sqrt((x_list[i]-x_list[i-1])**2 + (y_list[i]-y_list[i-1])**2)
+                d_s_list_.append(d_s_list_[-1] + d_s)
+                if d_s_list_[-1] > s_start_on_path:
+                    i_start = i-1
+                    scale = (s_start_on_path - d_s_list_[-2]) / (d_s_list_[-1] - d_s_list_[-2])
+                    found = True
+                    break
+        if not found:
+            rospy.logerror("Could not find initial position, is the given " + \
+                          "s_start_on_path (" + str(s_start_on_path) + ")" + \
+                          " longer than the path? ")
+
+
+    x_start = x_list[i_start] + scale * (x_list[i_start+1] - x_list[i_start])
+    y_start = y_list[i_start] + scale * (y_list[i_start+1] - y_list[i_start])
+    d_x_list = [0.0]
+    d_y_list = [0.0]
+    d_t_list = [0.0]
+
+    dx_second = x_list[i_start+1] - x_start
+    dy_second = y_list[i_start+1] - y_start
+    dt_second = numpy.sqrt(dx_second**2 + dy_second**2) / velocity
+    d_x_list.append(dx_second)
+    d_y_list.append(dy_second)
+    d_t_list.append(dt_second)
 
     for i in range(len(x_list)):
-        if i > 0:
-            dx_total = x_list[i] - x_list[0]
-            dy_total = y_list[i] - y_list[0]
+        if i > i_start+1:
+            dx_total = x_list[i] - x_start
+            dy_total = y_list[i] - y_start
             dx_relative = x_list[i] - x_list[i-1]
             dy_relative = y_list[i] - y_list[i-1]
-            dt = (numpy.sqrt(dx_relative**2 + dy_relative**2) / velocity ) + d_t_list[i-1]
+            dt = (numpy.sqrt(dx_relative**2 + dy_relative**2) / velocity ) + d_t_list[-1]
             d_x_list.append(dx_total)
             d_y_list.append(dy_total)
             d_t_list.append(dt)
@@ -121,6 +154,7 @@ if __name__ == '__main__':
 
     object_id = rospy.get_param("~object_id")
     velocity = rospy.get_param("~initial_v")
+    s_start = rospy.get_param("~s_start", 0.0)
     frame_id_initial_position = rospy.get_param("~frame_id_initial_position")
     frame_id_loc_mgmt = rospy.get_param("~frame_id_loc_mgmt")
     topic = rospy.get_param("~object_initialization_topic")
@@ -128,6 +162,7 @@ if __name__ == '__main__':
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
     import_path(path_to_trajectory)
+    set_start_and_delta_path(s_start)
 
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
