@@ -19,7 +19,7 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
 
 void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajectory,
                                        const ros::Time& timestamp) {
-    if (localization_mgmt_util::deltaTrajectoryContainsNANs(deltaTrajectory)) {
+    if (util_localization_mgmt::deltaTrajectoryContainsNANs(deltaTrajectory)) {
         ROS_WARN_THROTTLE(1,
                           "Not regarding desired motion of object with id %s as it contains NANs",
                           std::to_string(objectID_).c_str());
@@ -42,16 +42,16 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
         double scale;
         size_t i;
 
-        std::tie(i, scale) = localization_mgmt_util::getInterpolationIndexAndScale(
+        std::tie(i, scale) = util_localization_mgmt::getInterpolationIndexAndScale(
             deltaTrajectoryWithID_, startTimeOfDeltaTrajNsec_, timestamp);
 
         geometry_msgs::Pose p0 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i].delta_pose;
 
         geometry_msgs::Pose p1 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i + 1].delta_pose;
-        geometry_msgs::Pose newDeltaPose = localization_mgmt_util::interpolatePose(p0, p1, scale);
+        geometry_msgs::Pose newDeltaPose = util_localization_mgmt::interpolatePose(p0, p1, scale);
 
         currTimeNsec_ = timestamp.toNSec();
-        currPose_ = localization_mgmt_util::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+        currPose_ = util_localization_mgmt::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
 
     } catch (std::exception& e) {
         ROS_WARN_THROTTLE(1,
@@ -66,13 +66,13 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
 
 automated_driving_msgs::ObjectState DynamicObject::toMsg() {
     automated_driving_msgs::ObjectState os;
-    ros::Time timestamp = localization_mgmt_util::rosTimeFromNsec(currTimeNsec_);
+    ros::Time timestamp = util_localization_mgmt::rosTimeFromNsec(currTimeNsec_);
     os.header.stamp = timestamp;
     os.header.frame_id = frameId_;
     os.object_id = objectID_;
     os.classification = objectClassification_;
     os.existence_probability = 1.0;
-    os.motion_state = localization_mgmt_util::newMotionStatePoseOnly();
+    os.motion_state = util_localization_mgmt::newMotionStatePoseOnly();
     os.motion_state.pose.pose = currPose_;
     os.motion_state.header.stamp = timestamp;
     os.motion_state.header.frame_id = frameId_;
@@ -84,10 +84,10 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg() {
 
 geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
     geometry_msgs::TransformStamped tfs;
-    tfs.header.stamp = localization_mgmt_util::rosTimeFromNsec(currTimeNsec_);
+    tfs.header.stamp = util_localization_mgmt::rosTimeFromNsec(currTimeNsec_);
     tfs.header.frame_id = frameId_;
     tfs.child_frame_id = "visualization_only__" + childFrameId_;
-    tfs.transform = localization_mgmt_util::transformFromPose(currPose_);
+    tfs.transform = util_localization_mgmt::transformFromPose(currPose_);
     return tfs;
     // check if contains NANs
 }
