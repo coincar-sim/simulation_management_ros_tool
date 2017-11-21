@@ -11,6 +11,7 @@ LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle 
      * Set up dynamic reconfiguration
      */
     reconfigSrv_.setCallback(boost::bind(&LocalizationMgmt::reconfigureRequest, this, _1, _2));
+    startTime = ros::Time::now();
 
     /**
      * Publishers & subscribers
@@ -93,7 +94,8 @@ void LocalizationMgmt::objectStatePublisher(const ros::TimerEvent& event) {
         broadcastTF();
 
     } else {
-        ROS_WARN_THROTTLE(1, "%s: Publishing but no objects in memory!", ros::this_node::getName().c_str());
+        if ((timestamp - startTime).toSec() > delayForNoObjectsWarning)
+            ROS_WARN_THROTTLE(1, "%s: Publishing but no objects in memory!", ros::this_node::getName().c_str());
     }
 }
 

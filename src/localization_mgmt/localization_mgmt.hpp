@@ -35,6 +35,10 @@ private:
     // ros timer for publishing with constant frequency
     ros::Timer timer_;
 
+    // delay for the "no objects in memory" warning
+    double delayForNoObjectsWarning = 5.0;
+    ros::Time startTime;
+
     dynamic_reconfigure::Server<LocalizationMgmtConfig> reconfigSrv_; // Dynamic reconfiguration service
 
     tf2_ros::Buffer tfBuffer_;
