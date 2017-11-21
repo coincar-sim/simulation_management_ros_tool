@@ -1,0 +1,27 @@
+<launch>
+
+<!-- vehicle initialization arguments -->
+<arg name="object_id" />
+<arg name="object_initialization_topic_with_ns" />
+<arg name="trajectory_file" />
+<arg name="initial_v" />
+<arg name="s_start" />
+<arg name="hull_file" />
+<arg name="object_type" />
+<arg name="frame_id_initial_position" />
+<arg name="frame_id_loc_mgmt" />
+
+<node pkg="simulation_management_ros_tool" type="object_initialization.py" name="object_initialization" output="screen" >
+    <param name="object_id" value="$(arg object_id)" />
+    <param name="trajectory_file" value="$(arg trajectory_file)" />
+    <param name="initial_v" value="$(arg initial_v)" />
+    <param name="s_start" value="$(arg s_start)" />
+    <param name="hull_file" value="$(arg hull_file)" />
+    <param name="object_type" value="$(arg object_type)" />
+    <param name="frame_id_initial_position" value="$(arg frame_id_initial_position)" />
+    <param name="frame_id_loc_mgmt" value="$(arg frame_id_loc_mgmt)" />
+
+    <param name="object_initialization_topic" value="$(arg object_initialization_topic_with_ns)" />
+</node>
+
+</launch>
