@@ -2,7 +2,7 @@
 
 # ROS Dependencies
 import roslib
-from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime
+from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, ClassWithProbability, ObjectClassification
 from simulation_only_msgs.msg import  ObjectInitialization, DeltaTrajectoryWithID
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
@@ -158,6 +158,15 @@ if __name__ == '__main__':
     frame_id_initial_position = rospy.get_param("~frame_id_initial_position")
     frame_id_loc_mgmt = rospy.get_param("~frame_id_loc_mgmt")
     topic = rospy.get_param("~object_initialization_topic")
+    object_type_name = rospy.get_param("~object_type")
+    object_type_id = 0
+    if object_type_name == "car":
+        object_type_id = 4
+    elif object_type_name == "pedestrian":
+        object_type_id = 1
+    else:
+        rospy.logwarn("Object Type \"%s\" not known; currently known: \"car\", \"pedestrian\""%object_type_name)
+
     publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6 )
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
@@ -166,6 +175,14 @@ if __name__ == '__main__':
 
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
+
+    cwp = ClassWithProbability()
+    cwp.classification = object_type_id
+    cwp.probability = 1.
+
+    object_classification = ObjectClassification()
+    object_classification.classes_with_probabilities.append(cwp)
+
 
     if not frame_id_initial_position == frame_id_loc_mgmt:
         tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0)) #tf buffer length
@@ -179,6 +196,7 @@ if __name__ == '__main__':
     obj_init.object_id = object_id
 
     obj_init.hull = hull
+    obj_init.classification = object_classification
 
     pose_stamped = PoseStamped()
     pose_stamped.header.frame_id = frame_id_initial_position

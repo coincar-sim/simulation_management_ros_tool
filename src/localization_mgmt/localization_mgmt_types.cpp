@@ -5,10 +5,9 @@ namespace localization_mgmt_types {
 DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& initMsg,
                              const ros::Time& initTimestamp,
                              const std::string& frameId,
-                             const std::string& objectsPrefixTf,
-                             const automated_driving_msgs::ObjectClassification& classification) {
+                             const std::string& objectsPrefixTf) {
     objectID_ = initMsg.object_id;
-    objectClassification_ = classification;
+    objectClassification_ = initMsg.classification;
     poseAtStartOfDeltaTraj_ = initMsg.initial_pose;
     startTimeOfDeltaTrajNsec_ = initTimestamp.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;

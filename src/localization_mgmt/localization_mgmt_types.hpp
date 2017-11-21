@@ -22,9 +22,7 @@ public:
     DynamicObject(const simulation_only_msgs::ObjectInitialization& initMsg,
                   const ros::Time& initTimestamp,
                   const std::string& frameId,
-                  const std::string& objectsPrefixTf,
-                  const automated_driving_msgs::ObjectClassification& classification =
-                      automated_driving_msgs::ObjectClassification());
+                  const std::string& objectsPrefixTf);
 
     void newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID&, const ros::Time& timestamp);
     void interpolatePose(const ros::Time& timestamp);
