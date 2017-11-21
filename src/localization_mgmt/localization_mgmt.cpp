@@ -4,7 +4,7 @@ namespace simulation_management_ros_tool {
 
 LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle)
         : params_{private_node_handle},
-          objectArray_{(params_.fromParamServer(), params_.tf_topic_map), params_.tf_topic_objects_prefix},
+          objectArray_{(params_.fromParamServer(), params_.tf_topic_map), params_.frame_id_objects_prefix},
           reconfigSrv_{private_node_handle}, tfListener_{tfBuffer_} {
 
     /**

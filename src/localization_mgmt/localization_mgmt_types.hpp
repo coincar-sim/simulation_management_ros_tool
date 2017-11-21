@@ -22,7 +22,7 @@ public:
     DynamicObject(const simulation_only_msgs::ObjectInitialization& initMsg,
                   const ros::Time& initTimestamp,
                   const std::string& frameId,
-                  const std::string& objectsPrefixTf);
+                  const std::string& frameIdObjectsPrefix);
 
     void newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID&, const ros::Time& timestamp);
     void interpolatePose(const ros::Time& timestamp);
@@ -50,9 +50,9 @@ typedef std::shared_ptr<DynamicObject> dyn_obj_ptr_t;
 
 class DynamicObjectArray {
 public:
-    DynamicObjectArray(std::string frameId = "frameId", std::string objectsPrefixTf = "objectsPrefixTf");
+    DynamicObjectArray(std::string frameId = "frameId", std::string frameIdObjectsPrefix = "frameIdObjectsPrefix");
 
-    void setFrameIds(std::string frameId, std::string objectsPrefixTf);
+    void setFrameIds(std::string frameId, std::string frameIdObjectsPrefix);
     void initializeObject(const simulation_only_msgs::ObjectInitialization& msg, const ros::Time& timestamp);
     void interpolatePoses(const ros::Time& timestamp);
     bool checkObjectExistence(const int objectId);
@@ -63,7 +63,7 @@ public:
 
 private:
     std::string frameId_;
-    std::string objectsPrefixTf_;
+    std::string frameIdObjectsPrefix_;
     std::unordered_map<int, dyn_obj_ptr_t> objectStateMap_;
 };
 

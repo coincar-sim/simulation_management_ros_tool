@@ -50,7 +50,7 @@ gen.add("object_initialization_in_topic_with_ns", paramtype='std::string', descr
 gen.add("objects_out_topic_with_ns", paramtype='std::string', description="Topicname for the published object states", default="default_objects_out_topic_with_ns")
 gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishing object states", default=100.0, min=1.0, max=200.0, configurable=True)
 gen.add("tf_topic_map", paramtype='std::string', description="Frame_id of fixed frame in which the objects are initialized and move, e.g. a UTM transform of lat lon coordinates")
-gen.add("tf_topic_objects_prefix", paramtype='std::string', description="Frame_id of fixed frame", default="object")
+gen.add("frame_id_objects_prefix", paramtype='std::string', description="Frame_id prefix for objects", default="object")
 
 
 # DO NOT TOUCH THIS LINE

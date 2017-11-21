@@ -5,14 +5,14 @@ namespace localization_mgmt_types {
 DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& initMsg,
                              const ros::Time& initTimestamp,
                              const std::string& frameId,
-                             const std::string& objectsPrefixTf) {
+                             const std::string& frameIdObjectsPrefix) {
     objectID_ = initMsg.object_id;
     objectClassification_ = initMsg.classification;
     poseAtStartOfDeltaTraj_ = initMsg.initial_pose;
     startTimeOfDeltaTrajNsec_ = initTimestamp.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;
     frameId_ = frameId;
-    childFrameId_ = objectsPrefixTf + std::to_string(objectID_).c_str();
+    childFrameId_ = frameIdObjectsPrefix + std::to_string(objectID_).c_str();
     hull_ = initMsg.hull;
 }
 
@@ -93,14 +93,14 @@ geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
 }
 
 
-DynamicObjectArray::DynamicObjectArray(std::string frameId, std::string objectsPrefixTf) {
+DynamicObjectArray::DynamicObjectArray(std::string frameId, std::string frameIdObjectsPrefix) {
     frameId_ = frameId;
-    objectsPrefixTf_ = objectsPrefixTf;
+    frameIdObjectsPrefix_ = frameIdObjectsPrefix;
 }
 
-void DynamicObjectArray::setFrameIds(std::string frameId, std::string objectsPrefixTf) {
+void DynamicObjectArray::setFrameIds(std::string frameId, std::string frameIdObjectsPrefix) {
     frameId_ = frameId;
-    objectsPrefixTf_ = objectsPrefixTf;
+    frameIdObjectsPrefix_ = frameIdObjectsPrefix;
 }
 
 void DynamicObjectArray::initializeObject(const simulation_only_msgs::ObjectInitialization& msg,
@@ -117,8 +117,7 @@ void DynamicObjectArray::initializeObject(const simulation_only_msgs::ObjectInit
     }
 
     dyn_obj_ptr_t& currentObjectPtr = objectStateMap_[msg.object_id];
-    currentObjectPtr = std::make_shared<DynamicObject>(msg, timestamp, frameId_, objectsPrefixTf_);
-    // frameId_ must not be unique for all objects at initialization // transform from initial frameId to unique frameId of framework
+    currentObjectPtr = std::make_shared<DynamicObject>(msg, timestamp, frameId_, frameIdObjectsPrefix_);
 }
 
 void DynamicObjectArray::interpolatePoses(const ros::Time& timestamp) {
