@@ -47,7 +47,7 @@ gen.add("verbosity", paramtype='std::string', description="Set logger level for 
 # Your Params here
 gen.add("acc_factor", paramtype='double', description="acceleration factor", default=1.0, min=0.01, max=10, configurable=True)
 gen.add("time_resolution", paramtype='double', description="publish rate in 1/s", default=1000.0, min=0, max=1000000, configurable=True)
-
+gen.add("pause_time", paramtype='bool', description="toggle button to pause the simulation", default=False, configurable=True)
 
 
 # DO NOT TOUCH THIS LINE

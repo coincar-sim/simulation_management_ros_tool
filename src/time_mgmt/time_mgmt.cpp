@@ -53,6 +53,13 @@ void TimeMgmt::reconfigureRequest(TimeMgmtConfig& config, uint32_t level) {
 
     // renew Wall Timer parameters as time_resolution or acc_factor could have changed
     timer_.setPeriod(ros::WallDuration(1.0 / params_.time_resolution / params_.acc_factor));
+
+    // pause the timer when requested via the "pause" button
+    if (params_.pause_time) {
+        timer_.stop();
+    } else {
+        timer_.start();
+    }
 }
 
 } // namespace simulation_management_ros_tool
