@@ -9,11 +9,34 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
     objectID_ = initMsg.object_id;
     objectClassification_ = initMsg.classification;
     poseAtStartOfDeltaTraj_ = initMsg.initial_pose;
-    startTimeOfDeltaTrajNsec_ = initTimestamp.toNSec();
+
+    timestampSpawn_ = initTimestamp + initMsg.spawn_time;
+
+    if (initMsg.spawn_time.toNSec() > 0) {
+        objectActive_ = false;
+    } else {
+        objectActive_ = true;
+    }
+
+    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;
+
     frameId_ = frameId;
     childFrameId_ = frameIdObjectsPrefix + std::to_string(objectID_).c_str();
     hull_ = initMsg.hull;
+
+    switch (initMsg.role.type) {
+        case simulation_only_msgs::ObjectRole::OBSTACLE_STATIC: objectRole_=OBJECT_ROLE::OBSTACLE_STATIC;  break;
+        case simulation_only_msgs::ObjectRole::OBSTACLE_DYNAMIC: objectRole_=OBJECT_ROLE::OBSTACLE_DYNAMIC;  break;
+        case simulation_only_msgs::ObjectRole::AGENT_OPERATED: objectRole_=OBJECT_ROLE::AGENT_OPERATED;  break;
+        default: throw std::runtime_error("ObjectRole \"" + std::to_string(initMsg.role.type) + "\" not in known");
+    }
+    if (objectRole_==OBJECT_ROLE::OBSTACLE_DYNAMIC) {
+        timestampRemoval_ = initTimestamp + initMsg.spawn_time + initMsg.initial_delta_trajectory.delta_poses_with_delta_time.back().delta_time;
+    }
+    if (objectRole_==OBJECT_ROLE::OBSTACLE_STATIC) {
+        currPose_ = poseAtStartOfDeltaTraj_;
+    }
 }
 
 
@@ -25,6 +48,14 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
                           std::to_string(objectID_).c_str());
         return;
     }
+
+    if (objectRole_!=OBJECT_ROLE::AGENT_OPERATED) {
+        ROS_WARN_THROTTLE(1,
+                          "Not regarding desired motion of object with id %s as this is not an operated agent",
+                          std::to_string(objectID_).c_str());
+        return;
+    }
+
     interpolatePose(timestamp);
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
@@ -35,8 +66,33 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
 void DynamicObject::interpolatePose(const ros::Time& timestamp) {
     try {
 
-        if (timestamp.toNSec() == currTimeNsec_) {
+        if (timestamp == timestampOfLastUpdate_) {
+            // if timestamp is identical, do not recalculate
             return;
+        }
+
+
+        if (timestamp < timestampSpawn_) {
+            // if object is not yet spawned, it is inactive
+            objectActive_ = false;
+            timestampOfLastUpdate_ = timestamp;
+            return;
+        }
+
+        if (objectRole_ == OBJECT_ROLE::OBSTACLE_STATIC) {
+            // for a static obstacle the position does not have to be recalculated
+            objectActive_ = true;
+            timestampOfLastUpdate_ = timestamp;
+            return;
+        }
+
+        if (objectRole_ == OBJECT_ROLE::OBSTACLE_DYNAMIC) {
+            if (timestamp > timestampRemoval_) {
+                // if a dynamic obstacle has reached the end of its trajectory, it is inactive
+                objectActive_ = false;
+                timestampOfLastUpdate_ = timestamp;
+                return;
+            }
         }
 
         double scale;
@@ -44,14 +100,14 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
 
         std::tie(i, scale) = util_localization_mgmt::getInterpolationIndexAndScale(
             deltaTrajectoryWithID_, startTimeOfDeltaTrajNsec_, timestamp);
+        objectActive_ = true;
 
         geometry_msgs::Pose p0 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i].delta_pose;
-
         geometry_msgs::Pose p1 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i + 1].delta_pose;
         geometry_msgs::Pose newDeltaPose = util_localization_mgmt::interpolatePose(p0, p1, scale);
 
-        currTimeNsec_ = timestamp.toNSec();
         currPose_ = util_localization_mgmt::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+        timestampOfLastUpdate_ = timestamp;
 
     } catch (std::exception& e) {
         ROS_WARN_THROTTLE(1,
@@ -59,15 +115,22 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
                           "occured: \"%s\")",
                           std::to_string(objectID_).c_str(),
                           e.what());
-        currTimeNsec_ = timestamp.toNSec();
+        timestampOfLastUpdate_ = timestamp;
     }
 }
 
+bool DynamicObject::isActive(){
+    return objectActive_;
+}
 
-automated_driving_msgs::ObjectState DynamicObject::toMsg() {
+
+automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timestamp) {
+
+    if (timestamp != timestampOfLastUpdate_){
+        throw std::runtime_error("Requested timestamp of message differs from timestamp of objectState");
+    }
     automated_driving_msgs::ObjectState os;
-    ros::Time timestamp = util_localization_mgmt::rosTimeFromNsec(currTimeNsec_);
-    os.header.stamp = timestamp;
+    os.header.stamp = timestampOfLastUpdate_;
     os.header.frame_id = frameId_;
     os.object_id = objectID_;
     os.classification = objectClassification_;
@@ -84,8 +147,9 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg() {
 
 geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
     geometry_msgs::TransformStamped tfs;
-    tfs.header.stamp = util_localization_mgmt::rosTimeFromNsec(currTimeNsec_);
+    tfs.header.stamp = timestampOfLastUpdate_;
     tfs.header.frame_id = frameId_;
+    // add prefix to prevent usage of TF instead of motion state; TF is only provided for visualization
     tfs.child_frame_id = "visualization_only__" + childFrameId_;
     tfs.transform = util_localization_mgmt::transformFromPose(currPose_);
     return tfs;
@@ -120,11 +184,21 @@ void DynamicObjectArray::initializeObject(const simulation_only_msgs::ObjectInit
     currentObjectPtr = std::make_shared<DynamicObject>(msg, timestamp, frameId_, frameIdObjectsPrefix_);
 }
 
-void DynamicObjectArray::interpolatePoses(const ros::Time& timestamp) {
-    std::vector<dyn_obj_ptr_t> objectStateVector = getAllObjectStates();
-    for (dyn_obj_ptr_t objPtr : objectStateVector) {
+void DynamicObjectArray::determineActiveStateAndInterpolatePoses(const ros::Time& timestamp) {
+
+    for (auto it : objectStateMap_) {
+        dyn_obj_ptr_t objPtr = it.second;
         objPtr->interpolatePose(timestamp);
     }
+    timestampOfLastUpdate_ = timestamp;
+}
+
+void DynamicObjectArray::removeObject(const int objectId){
+    objectStateMap_.erase(objectId);
+}
+
+bool DynamicObjectArray::containsObjects() {
+    return !objectStateMap_.empty();
 }
 
 bool DynamicObjectArray::checkObjectExistence(const int objectId) {
@@ -149,15 +223,31 @@ std::vector<dyn_obj_ptr_t> DynamicObjectArray::getAllObjectStates() {
     return objectStateVector;
 }
 
-automated_driving_msgs::ObjectStateArray DynamicObjectArray::toMsg(const ros::Time& timestamp) {
+std::vector<dyn_obj_ptr_t> DynamicObjectArray::getActiveObjectStates() {
 
+    std::vector<dyn_obj_ptr_t> objectStateVector;
+    // todo: better implementation
+    for (auto it : objectStateMap_) {
+        dyn_obj_ptr_t objPtr = it.second;
+        if (objPtr->isActive()) {
+            objectStateVector.push_back(objPtr);
+        }
+    }
+    return objectStateVector;
+}
+
+automated_driving_msgs::ObjectStateArray DynamicObjectArray::activeObjectsToMsg(const ros::Time& timestamp) {
+
+    if (timestamp != timestampOfLastUpdate_){
+        throw std::runtime_error("Requested timestamp of message differs from timestamp of objectStates");
+    }
     automated_driving_msgs::ObjectStateArray osa;
     osa.header.stamp = timestamp;
     osa.header.frame_id = frameId_;
-    std::vector<dyn_obj_ptr_t> objectStateVector = getAllObjectStates();
+    std::vector<dyn_obj_ptr_t> objectStateVector = getActiveObjectStates();
     osa.objects = std::vector<automated_driving_msgs::ObjectState>(objectStateVector.size());
     for (size_t i = 0; i < objectStateVector.size(); i++) {
-        osa.objects[i] = objectStateVector[i]->toMsg();
+        osa.objects[i] = objectStateVector[i]->toMsg(timestamp);
     }
     return osa;
 }

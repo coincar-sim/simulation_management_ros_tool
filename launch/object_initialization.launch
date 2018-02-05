@@ -8,6 +8,8 @@
 <arg name="s_start" />
 <arg name="hull_file" />
 <arg name="object_type" />
+<arg name="object_role" />
+<arg name="spawn_time" default="0.0" />
 <arg name="frame_id_initial_position" />
 <arg name="frame_id_loc_mgmt" />
 
@@ -18,6 +20,8 @@
     <param name="s_start" value="$(arg s_start)" />
     <param name="hull_file" value="$(arg hull_file)" />
     <param name="object_type" value="$(arg object_type)" />
+    <param name="object_role" value="$(arg object_role)" />
+    <param name="spawn_time" value="$(arg spawn_time)" />
     <param name="frame_id_initial_position" value="$(arg frame_id_initial_position)" />
     <param name="frame_id_loc_mgmt" value="$(arg frame_id_loc_mgmt)" />
 

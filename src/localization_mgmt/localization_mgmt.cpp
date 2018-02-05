@@ -24,6 +24,11 @@ LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle 
                                                      &LocalizationMgmt::objectInitializationSubCallback,
                                                      this,
                                                      ros::TransportHints().tcpNoDelay());
+    objectRemovalSub_ = node_handle.subscribe(params_.object_removal_in_topic_with_ns,
+                                              params_.msg_queue_size,
+                                              &LocalizationMgmt::objectRemovalSubCallback,
+                                              this,
+                                              ros::TransportHints().tcpNoDelay());
 
     desiredMotionSub_ = node_handle.subscribe(params_.desired_motion_in_topic_with_ns,
                                               params_.msg_queue_size,
@@ -46,7 +51,7 @@ void LocalizationMgmt::desiredMotionSubCallback(const simulation_only_msgs::Delt
         objectArray_.getObjectStateById(msg.object_id)->newDeltaTrajectory(msg, ros::Time::now());
 
     } else {
-        ROS_WARN("%s: Received DesiredMotion.msg of Object before its initialization! I "
+        ROS_WARN("%s: Received DesiredMotion.msg of Object that does not exist! I "
                  "discard this message! (id=%s)",
                  ros::this_node::getName().c_str(),
                  std::to_string(msg.object_id).c_str());
@@ -62,9 +67,29 @@ void LocalizationMgmt::objectInitializationSubCallback(const simulation_only_msg
     if (objectArray_.checkObjectExistence(msg.object_id) == false) {
 
         objectArray_.initializeObject(msg, ros::Time::now());
+        ROS_INFO("%s: Initialized object with id %s",
+                 ros::this_node::getName().c_str(),
+                 std::to_string(msg.object_id).c_str());
 
     } else {
         ROS_WARN("%s: Received ObjectInitialization.msg of Object that already was initialized! I "
+                 "discard this message! (id=%s)",
+                 ros::this_node::getName().c_str(),
+                 std::to_string(msg.object_id).c_str());
+    }
+}
+
+void LocalizationMgmt::objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg){
+
+    if (objectArray_.checkObjectExistence(msg.object_id)) {
+
+        objectArray_.removeObject(msg.object_id);
+        ROS_INFO("%s: Removed object with id %s",
+                 ros::this_node::getName().c_str(),
+                 std::to_string(msg.object_id).c_str());
+
+    } else {
+        ROS_WARN("%s: Received ObjectRemoval.msg for Object that does not exist! I "
                  "discard this message! (id=%s)",
                  ros::this_node::getName().c_str(),
                  std::to_string(msg.object_id).c_str());
@@ -87,10 +112,10 @@ void LocalizationMgmt::objectStatePublisher(const ros::TimerEvent& event) {
 
     ros::Time timestamp = ros::Time::now();
 
-    if (objectArray_.getAllObjectStates().size() != 0) {
+    if (objectArray_.containsObjects()) {
 
-        objectArray_.interpolatePoses(timestamp);
-        objectsGroundTruthPub_.publish(objectArray_.toMsg(timestamp));
+        objectArray_.determineActiveStateAndInterpolatePoses(timestamp);
+        objectsGroundTruthPub_.publish(objectArray_.activeObjectsToMsg(timestamp));
         broadcastTF();
 
     } else {
@@ -104,7 +129,7 @@ void LocalizationMgmt::objectStatePublisher(const ros::TimerEvent& event) {
  */
 void LocalizationMgmt::broadcastTF() {
 
-    std::vector<localization_mgmt_types::dyn_obj_ptr_t> objectStateVector = objectArray_.getAllObjectStates();
+    std::vector<localization_mgmt_types::dyn_obj_ptr_t> objectStateVector = objectArray_.getActiveObjectStates();
     for (localization_mgmt_types::dyn_obj_ptr_t objPtr : objectStateVector) {
 
         tfBroadcaster_.sendTransform(objPtr->toTransformStamped());

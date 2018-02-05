@@ -47,6 +47,7 @@ gen.add("verbosity", paramtype='std::string', description="Set logger level for 
 # Your Params here
 gen.add("desired_motion_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming desired motion of the objects", default="default_desired_motion_in_topic_with_ns")
 gen.add("object_initialization_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming initialization of the objects", default="default_object_initialization_in_topic_with_ns")
+gen.add("object_removal_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming removal requests", default="default_object_removal_in_topic_with_ns")
 gen.add("objects_out_topic_with_ns", paramtype='std::string', description="Topicname for the published object states", default="default_objects_out_topic_with_ns")
 gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishing object states", default=100.0, min=1.0, max=200.0, configurable=True)
 gen.add("tf_topic_map", paramtype='std::string', description="Frame_id of fixed frame in which the objects are initialized and move, e.g. a UTM transform of lat lon coordinates")

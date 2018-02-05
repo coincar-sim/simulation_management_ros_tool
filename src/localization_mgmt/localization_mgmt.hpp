@@ -15,6 +15,7 @@
 #include "simulation_management_ros_tool/LocalizationMgmtParameters.h"
 #include "simulation_only_msgs/DeltaTrajectoryWithID.h"
 #include "simulation_only_msgs/ObjectInitialization.h"
+#include "simulation_only_msgs/ObjectRemoval.h"
 
 namespace simulation_management_ros_tool {
 
@@ -26,6 +27,7 @@ private:
     ros::Publisher objectsGroundTruthPub_;
     ros::Subscriber desiredMotionSub_;
     ros::Subscriber objectInitializationSub_;
+    ros::Subscriber objectRemovalSub_;
 
     LocalizationMgmtParameters params_;
 
@@ -49,6 +51,7 @@ private:
     void objectStatePublisher(const ros::TimerEvent& event);
     void desiredMotionSubCallback(const simulation_only_msgs::DeltaTrajectoryWithID& msg);
     void objectInitializationSubCallback(const simulation_only_msgs::ObjectInitialization& msg);
+    void objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg);
     void reconfigureRequest(LocalizationMgmtConfig&, uint32_t);
 };
 

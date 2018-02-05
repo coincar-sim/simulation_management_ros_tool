@@ -1,0 +1,14 @@
+<launch>
+
+    <arg name="object_id" />
+    <arg name="object_removal_topic_with_ns" />
+    <arg name="time_of_removal_walltime" />
+
+    <node pkg="simulation_management_ros_tool" type="object_removal.py" name="object_removal" output="screen" >
+        <param name="object_id" value="$(arg object_id)" />
+        <param name="time_of_removal_walltime" value="$(arg time_of_removal_walltime)" />
+
+        <param name="object_removal_topic" value="$(arg object_removal_topic_with_ns)" />
+    </node>
+
+</launch>

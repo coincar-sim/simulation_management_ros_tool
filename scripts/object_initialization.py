@@ -3,7 +3,7 @@
 # ROS Dependencies
 import roslib
 from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, ClassWithProbability, ObjectClassification
-from simulation_only_msgs.msg import  ObjectInitialization, DeltaTrajectoryWithID
+from simulation_only_msgs.msg import  ObjectInitialization, DeltaTrajectoryWithID, ObjectRole
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Quaternion
@@ -158,6 +158,7 @@ if __name__ == '__main__':
     frame_id_initial_position = rospy.get_param("~frame_id_initial_position")
     frame_id_loc_mgmt = rospy.get_param("~frame_id_loc_mgmt")
     topic = rospy.get_param("~object_initialization_topic")
+
     object_type_name = rospy.get_param("~object_type")
     object_type_id = 0
     if object_type_name == "car":
@@ -166,6 +167,26 @@ if __name__ == '__main__':
         object_type_id = 1
     else:
         rospy.logwarn("Object Type \"%s\" not known; currently known: \"car\", \"pedestrian\""%object_type_name)
+    cwp = ClassWithProbability()
+    cwp.classification = object_type_id
+    cwp.probability = 1.
+    object_classification = ObjectClassification()
+    object_classification.classes_with_probabilities.append(cwp)
+
+    object_role_name = rospy.get_param("~object_role")
+    OBSTACLE_STATIC=10,
+    OBSTACLE_DYNAMIC=20,
+    AGENT_OPERATED=100
+    if object_role_name == "OBSTACLE_STATIC":
+        object_role_id = ObjectRole.OBSTACLE_STATIC
+    elif object_role_name == "OBSTACLE_DYNAMIC":
+        object_role_id = ObjectRole.OBSTACLE_DYNAMIC
+    elif object_role_name == "AGENT_OPERATED":
+        object_role_id = ObjectRole.AGENT_OPERATED
+    else:
+        rospy.logwarn("Object Type \"%s\" not known; currently known: \"OBSTACLE_STATIC\", \"OBSTACLE_DYNAMIC\", \"AGENT_OPERATED\""%object_type_name)
+    object_role = ObjectRole()
+    object_role.type = object_role_id
 
     publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6 )
 
@@ -176,12 +197,8 @@ if __name__ == '__main__':
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
 
-    cwp = ClassWithProbability()
-    cwp.classification = object_type_id
-    cwp.probability = 1.
-
-    object_classification = ObjectClassification()
-    object_classification.classes_with_probabilities.append(cwp)
+    spawn_time_seconds = rospy.get_param("~spawn_time")
+    spawn_time = rospy.Duration(spawn_time_seconds)
 
 
     if not frame_id_initial_position == frame_id_loc_mgmt:
@@ -197,6 +214,8 @@ if __name__ == '__main__':
 
     obj_init.hull = hull
     obj_init.classification = object_classification
+    obj_init.role = object_role
+    obj_init.spawn_time = spawn_time
 
     pose_stamped = PoseStamped()
     pose_stamped.header.frame_id = frame_id_initial_position
