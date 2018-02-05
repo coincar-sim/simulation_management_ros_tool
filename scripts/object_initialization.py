@@ -124,8 +124,8 @@ def set_start_and_delta_path(s_start_on_path):
                           " longer than the path? ")
 
 
-    x_start = x_list[i_start] + scale# (x_list[i_start+1] - x_list[i_start])
-    y_start = y_list[i_start] + scale# (y_list[i_start+1] - y_list[i_start])
+    x_start = x_list[i_start] + scale * (x_list[i_start+1] - x_list[i_start])
+    y_start = y_list[i_start] + scale * (y_list[i_start+1] - y_list[i_start])
     d_x_list = [0.0]
     d_y_list = [0.0]
     d_t_list = [0.0]
