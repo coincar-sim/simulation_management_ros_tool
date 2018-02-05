@@ -1,9 +1,9 @@
 <package format="2">
   <name>simulation_management_ros_tool</name>
-  <version>0.9.0</version>
+  <version>1.0.0</version>
   <description>Main Part of the Simulation Framework</description>
 
-  <license>contact-the-maintainer</license>
+  <license>BSD</license>
   <maintainer email="maximilian.naumann@kit.edu">Maximilian Naumann</maintainer>
 
   <!-- ROS dependencies -->
