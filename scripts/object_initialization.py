@@ -218,7 +218,7 @@ if __name__ == '__main__':
     object_role = ObjectRole()
     object_role.type = object_role_id
 
-    publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6 )
+    publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6, latch=True )
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
     import_path(path_to_trajectory)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0)) #tf buffer length
         tf_listener = tf2_ros.TransformListener(tf_buffer)
 
-    time.sleep(3)
+    # time.sleep(3)
 
     obj_init = ObjectInitialization()
     obj_init.header = Header()
@@ -290,3 +290,4 @@ if __name__ == '__main__':
             obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
 
     publisher.publish(obj_init)
+    rospy.spin()
