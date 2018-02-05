@@ -19,8 +19,11 @@ TimeMgmt::TimeMgmt(ros::NodeHandle node_handle, ros::NodeHandle private_node_han
      * Set up publisher & timer
      */
     clockPub_ = private_node_handle.advertise<rosgraph_msgs::Clock>("/clock", 5);
-    timer_ = private_node_handle.createWallTimer(
-        ros::WallDuration(1.0 / params_.time_resolution / params_.acc_factor), &TimeMgmt::timerCallbackSim, this);
+    timer_ = private_node_handle.createWallTimer(ros::WallDuration(1.0 / params_.time_resolution / params_.acc_factor),
+                                                 &TimeMgmt::timerCallbackSim,
+                                                 this,
+                                                 false,
+                                                 !params_.pause_time);
     startWallTime_ = ros::WallTime::now();
     startSimTime_ = startSimTime_.fromNSec(startWallTime_.toNSec());
 }
