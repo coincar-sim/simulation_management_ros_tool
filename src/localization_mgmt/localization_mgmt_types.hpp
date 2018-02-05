@@ -20,12 +20,7 @@
 namespace localization_mgmt_types {
 
 
-enum class OBJECT_ROLE
-{
-    OBSTACLE_STATIC=10,
-    OBSTACLE_DYNAMIC=20,
-    AGENT_OPERATED=100
-};
+enum class OBJECT_ROLE { OBSTACLE_STATIC = 10, OBSTACLE_DYNAMIC = 20, AGENT_OPERATED = 100 };
 
 
 class DynamicObject {

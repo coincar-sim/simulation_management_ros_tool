@@ -79,14 +79,13 @@ void LocalizationMgmt::objectInitializationSubCallback(const simulation_only_msg
     }
 }
 
-void LocalizationMgmt::objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg){
+void LocalizationMgmt::objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg) {
 
     if (objectArray_.checkObjectExistence(msg.object_id)) {
 
         objectArray_.removeObject(msg.object_id);
-        ROS_INFO("%s: Removed object with id %s",
-                 ros::this_node::getName().c_str(),
-                 std::to_string(msg.object_id).c_str());
+        ROS_INFO(
+            "%s: Removed object with id %s", ros::this_node::getName().c_str(), std::to_string(msg.object_id).c_str());
 
     } else {
         ROS_WARN("%s: Received ObjectRemoval.msg for Object that does not exist! I "

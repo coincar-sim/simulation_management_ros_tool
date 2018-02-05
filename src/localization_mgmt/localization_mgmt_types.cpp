@@ -26,15 +26,23 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
     hull_ = initMsg.hull;
 
     switch (initMsg.role.type) {
-        case simulation_only_msgs::ObjectRole::OBSTACLE_STATIC: objectRole_=OBJECT_ROLE::OBSTACLE_STATIC;  break;
-        case simulation_only_msgs::ObjectRole::OBSTACLE_DYNAMIC: objectRole_=OBJECT_ROLE::OBSTACLE_DYNAMIC;  break;
-        case simulation_only_msgs::ObjectRole::AGENT_OPERATED: objectRole_=OBJECT_ROLE::AGENT_OPERATED;  break;
-        default: throw std::runtime_error("ObjectRole \"" + std::to_string(initMsg.role.type) + "\" not in known");
+    case simulation_only_msgs::ObjectRole::OBSTACLE_STATIC:
+        objectRole_ = OBJECT_ROLE::OBSTACLE_STATIC;
+        break;
+    case simulation_only_msgs::ObjectRole::OBSTACLE_DYNAMIC:
+        objectRole_ = OBJECT_ROLE::OBSTACLE_DYNAMIC;
+        break;
+    case simulation_only_msgs::ObjectRole::AGENT_OPERATED:
+        objectRole_ = OBJECT_ROLE::AGENT_OPERATED;
+        break;
+    default:
+        throw std::runtime_error("ObjectRole \"" + std::to_string(initMsg.role.type) + "\" not in known");
     }
-    if (objectRole_==OBJECT_ROLE::OBSTACLE_DYNAMIC) {
-        timestampRemoval_ = initTimestamp + initMsg.spawn_time + initMsg.initial_delta_trajectory.delta_poses_with_delta_time.back().delta_time;
+    if (objectRole_ == OBJECT_ROLE::OBSTACLE_DYNAMIC) {
+        timestampRemoval_ = initTimestamp + initMsg.spawn_time +
+                            initMsg.initial_delta_trajectory.delta_poses_with_delta_time.back().delta_time;
     }
-    if (objectRole_==OBJECT_ROLE::OBSTACLE_STATIC) {
+    if (objectRole_ == OBJECT_ROLE::OBSTACLE_STATIC) {
         currPose_ = poseAtStartOfDeltaTraj_;
     }
 }
@@ -49,7 +57,7 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
         return;
     }
 
-    if (objectRole_!=OBJECT_ROLE::AGENT_OPERATED) {
+    if (objectRole_ != OBJECT_ROLE::AGENT_OPERATED) {
         ROS_WARN_THROTTLE(1,
                           "Not regarding desired motion of object with id %s as this is not an operated agent",
                           std::to_string(objectID_).c_str());
@@ -119,14 +127,14 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
     }
 }
 
-bool DynamicObject::isActive(){
+bool DynamicObject::isActive() {
     return objectActive_;
 }
 
 
 automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timestamp) {
 
-    if (timestamp != timestampOfLastUpdate_){
+    if (timestamp != timestampOfLastUpdate_) {
         throw std::runtime_error("Requested timestamp of message differs from timestamp of objectState");
     }
     automated_driving_msgs::ObjectState os;
@@ -193,7 +201,7 @@ void DynamicObjectArray::determineActiveStateAndInterpolatePoses(const ros::Time
     timestampOfLastUpdate_ = timestamp;
 }
 
-void DynamicObjectArray::removeObject(const int objectId){
+void DynamicObjectArray::removeObject(const int objectId) {
     objectStateMap_.erase(objectId);
 }
 
@@ -238,7 +246,7 @@ std::vector<dyn_obj_ptr_t> DynamicObjectArray::getActiveObjectStates() {
 
 automated_driving_msgs::ObjectStateArray DynamicObjectArray::activeObjectsToMsg(const ros::Time& timestamp) {
 
-    if (timestamp != timestampOfLastUpdate_){
+    if (timestamp != timestampOfLastUpdate_) {
         throw std::runtime_error("Requested timestamp of message differs from timestamp of objectStates");
     }
     automated_driving_msgs::ObjectStateArray osa;
