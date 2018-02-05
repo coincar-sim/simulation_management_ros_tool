@@ -35,25 +35,21 @@ Use one of these commands to add parameters to your parameter struct.
         :return:
 
 """
-from mrt_cmake_modules.parameter_generator_catkin import *
+from rosinterface_handler.interface_generator_catkin import *
 
-gen = ParameterGenerator()
+gen = InterfaceGenerator()
 
 # ROS-specific
-gen.add("msg_queue_size", paramtype='int', description="Queusize for publisher", default=6, min=1)
-gen.add("verbosity", paramtype='std::string', description="Set logger level for this node", default="debug")
+gen.add("msg_queue_size", paramtype='int', description="Queusize for publisher", default=5, min=1)
+gen.add_verbosity_param(configurable=True)
 
 
 # Your Params here
-gen.add("desired_motion_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming desired motion of the objects")
-gen.add("object_initialization_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming initialization of the objects")
-gen.add("object_removal_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming removal requests")
-gen.add("objects_out_topic_with_ns", paramtype='std::string', description="Topicname for the published object states")
-gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishing object states", default=100.0, min=1.0, max=200.0, configurable=True)
-gen.add("tf_topic_map", paramtype='std::string', description="Frame_id of fixed frame in which the objects are initialized and move, e.g. a UTM transform of lat lon coordinates")
-gen.add("frame_id_objects_prefix", paramtype='std::string', description="Frame_id prefix for objects", default="object")
+gen.add("acc_factor", paramtype='double', description="acceleration factor", default=1.0, min=0.01, max=10, configurable=True)
+gen.add("time_resolution", paramtype='double', description="publish rate in 1/s", default=1000.0, min=0, max=1000000, configurable=True)
+gen.add("pause_time", paramtype='bool', description="toggle button to pause the simulation", default=False, configurable=True)
 
 
 # DO NOT TOUCH THIS LINE
-#Syntax : Package, Node, Config Name(The final name will be LocalizationMgmtConfig)
-exit(gen.generate("simulation_management_ros_tool", "localization_mgmt", "LocalizationMgmt"))
+#Syntax : Package, Node, Config Name(The final name will be TimeMgmtConfig)
+exit(gen.generate("simulation_management_ros_tool", "time_mgmt", "TimeMgmt"))

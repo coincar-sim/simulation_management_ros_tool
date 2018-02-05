@@ -12,7 +12,7 @@
 #include "automated_driving_msgs/MotionPrediction.h"
 #include "automated_driving_msgs/MotionState.h"
 #include "automated_driving_msgs/ObjectStateArray.h"
-#include "simulation_management_ros_tool/LocalizationMgmtParameters.h"
+#include "simulation_management_ros_tool/LocalizationMgmtInterface.h"
 #include "simulation_only_msgs/DeltaTrajectoryWithID.h"
 #include "simulation_only_msgs/ObjectInitialization.h"
 #include "simulation_only_msgs/ObjectRemoval.h"
@@ -29,7 +29,7 @@ private:
     ros::Subscriber objectInitializationSub_;
     ros::Subscriber objectRemovalSub_;
 
-    LocalizationMgmtParameters params_;
+    LocalizationMgmtInterface params_;
 
     // storage for the object states
     localization_mgmt_types::DynamicObjectArray objectArray_;

@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include <rosgraph_msgs/Clock.h>
 #include <std_msgs/Header.h>
-#include "simulation_management_ros_tool/TimeMgmtParameters.h"
+#include "simulation_management_ros_tool/TimeMgmtInterface.h"
 
 namespace simulation_management_ros_tool {
 
@@ -18,7 +18,7 @@ private:
 
     dynamic_reconfigure::Server<TimeMgmtConfig> reconfigSrv_; // Dynamic reconfiguration service
 
-    TimeMgmtParameters params_;
+    TimeMgmtInterface params_;
 
     ros::Publisher clockPub_;
     ros::WallTimer timer_;
