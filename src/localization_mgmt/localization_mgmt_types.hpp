@@ -35,16 +35,12 @@
 #include <ros/ros.h>
 #include <shape_msgs/Mesh.h>
 
-#include <simulation_utils/util_localization_mgmt.hpp>
-#include "automated_driving_msgs/MotionPrediction.h"
-#include "automated_driving_msgs/MotionState.h"
-#include "automated_driving_msgs/ObjectClassification.h"
-#include "automated_driving_msgs/ObjectState.h"
-#include "automated_driving_msgs/ObjectStateArray.h"
-#include "simulation_only_msgs/DeltaTrajectoryWithID.h"
-#include "simulation_only_msgs/ObjectInitialization.h"
-#include "simulation_only_msgs/ObjectRemoval.h"
-#include "simulation_only_msgs/ObjectRole.h"
+#include <automated_driving_msgs/MotionPrediction.h>
+#include <automated_driving_msgs/MotionState.h>
+#include <automated_driving_msgs/ObjectStateArray.h>
+#include <simulation_only_msgs/DeltaTrajectoryWithID.h>
+#include <simulation_only_msgs/ObjectInitialization.h>
+#include <simulation_only_msgs/ObjectRemoval.h>
 
 
 namespace localization_mgmt_types {
@@ -65,10 +61,10 @@ public:
     bool isActive();
 
     automated_driving_msgs::ObjectState toMsg(const ros::Time& timestamp);
-    geometry_msgs::TransformStamped toTransformStamped();
+    void getTransformStamped(geometry_msgs::TransformStamped& tfs, bool& valid);
 
 private:
-    int objectID_;
+    unsigned int objectID_;
 
     uint64_t startTimeOfDeltaTrajNsec_;
     uint64_t spawnTimeNSec_;
@@ -95,13 +91,11 @@ class DynamicObjectArray {
 public:
     DynamicObjectArray(std::string frameId = "frameId", std::string frameIdObjectsPrefix = "frameIdObjectsPrefix");
 
-    void setFrameIds(std::string frameId, std::string frameIdObjectsPrefix);
     void initializeObject(const simulation_only_msgs::ObjectInitialization& msg, const ros::Time& timestamp);
-    void determineActiveStateAndInterpolatePoses(const ros::Time& timestamp);
-    void removeObject(const int objectId);
+    void removeObject(const unsigned int objectId);
     bool containsObjects();
-    bool checkObjectExistence(const int objectId);
-    dyn_obj_ptr_t getObjectStateById(const int objectId);
+    bool checkObjectExistence(const unsigned int objectId);
+    dyn_obj_ptr_t getObjectStateById(const unsigned int objectId);
     std::vector<dyn_obj_ptr_t> getActiveObjectStates();
 
     automated_driving_msgs::ObjectStateArray activeObjectsToMsg(const ros::Time& timestamp);
@@ -110,9 +104,13 @@ private:
     std::string frameId_;
     std::string frameIdObjectsPrefix_;
     ros::Time timestampOfLastUpdate_;
-    std::unordered_map<int, dyn_obj_ptr_t> objectStateMap_;
+    std::unordered_map<unsigned int, dyn_obj_ptr_t> objectStateMap_;
 
+    void setFrameIds(std::string frameId, std::string frameIdObjectsPrefix);
+    void determineActiveStateAndInterpolatePoses(const ros::Time& timestamp);
     std::vector<dyn_obj_ptr_t> getAllObjectStates();
 };
+
+automated_driving_msgs::MotionState newMotionStatePoseOnly();
 
 } // namespace localization_mgmt_types

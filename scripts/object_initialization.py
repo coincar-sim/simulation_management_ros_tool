@@ -41,10 +41,12 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import Header
 from shape_msgs.msg import Mesh
 from shape_msgs.msg import MeshTriangle
+from sensor_msgs.msg import NavSatFix
 import rospy
 import tf
 import tf2_ros
 import tf2_geometry_msgs
+from util_geo_coordinates_ros import CoordinateTransform
 
 # Regular Python Dependencies
 import time
@@ -64,6 +66,7 @@ x_start = None
 y_start = None
 velocity = None
 object_id = None
+cs = None
 
 def import_hull(xml_file):
     e = xml.etree.ElementTree.parse(xml_file).getroot()
@@ -87,21 +90,20 @@ def import_hull(xml_file):
     return mesh
 
 
-def import_path(xml_file):
+def import_path(xml_file, cs):
     e = xml.etree.ElementTree.parse(xml_file).getroot()
     global lat_list, lon_list, x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
 
-
     for node in e.findall('node'):
-        lat_list.append(node.get('lat'))
-        lon_list.append(node.get('lon'))
-        [x,y] = ll2xy(lat_list[-1],lon_list[-1])
+        lat_list.append(float(node.get('lat')))
+        lon_list.append(float(node.get('lon')))
+        [x,y] = cs.ll2xy(lat_list[-1],lon_list[-1])
         x_list.append(x)
         y_list.append(y)
 
 
-def set_start_and_delta_path(s_start_on_path):
-    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
+def set_start_and_delta_path(s_start_on_path, velocity):
+    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start
 
     i_start = 0
     scale = 0.0
@@ -119,9 +121,9 @@ def set_start_and_delta_path(s_start_on_path):
                     found = True
                     break
         if not found:
-            rospy.logerror("Could not find initial position, is the given " + \
-                          "s_start_on_path (" + str(s_start_on_path) + ")" + \
-                          " longer than the path? ")
+            rospy.logerr("Could not find initial position, is the given " + \
+                         "s_start_on_path (" + str(s_start_on_path) + ")" + \
+                         " longer than the path? ")
 
 
     x_start = x_list[i_start] + scale * (x_list[i_start+1] - x_list[i_start])
@@ -149,18 +151,6 @@ def set_start_and_delta_path(s_start_on_path):
             d_t_list.append(dt)
 
 
-def ll2xy(lat, lon):
-    p = pyproj.Proj(proj='utm', zone=32, ellps='WGS84')
-    [x, y] = p(lon, lat)
-    return [x, y]
-
-
-def xy2ll(x, y):
-    p = pyproj.Proj(proj='utm', zone=32, ellps='WGS84')
-    [lon, lat] = p(x, y, inverse=True)
-    return [lat, lon]
-
-
 def orientation_from_yaw(yaw):
     orientation = Quaternion()
     quat = tf.transformations.quaternion_from_euler(0.0, 0.0, yaw)
@@ -178,9 +168,26 @@ def position_from_x_y(x, y):
     position.z = 0.0
     return position
 
+
+def on_message(msg):
+    global cs
+    cs = CoordinateTransform(float(msg.latitude), float(msg.longitude))
+
 if __name__ == '__main__':
 
     rospy.init_node( 'object_initialization' )
+
+    navsatfix_topic = rospy.get_param("~navsatfix_topic")
+    rospy.Subscriber(navsatfix_topic, NavSatFix, on_message, queue_size=5)
+
+    wait_count = 0
+    rate = rospy.Rate(1.)
+    while not cs:
+        rospy.loginfo_throttle(3, "Waiting for navsatfix message on topic " + navsatfix_topic)
+        wait_count += 1
+        if wait_count > 20:
+            raise RuntimeError("Initialization of coordinate transform failed")
+        rate.sleep()
 
     object_id = rospy.get_param("~object_id")
     velocity = rospy.get_param("~initial_v")
@@ -221,15 +228,14 @@ if __name__ == '__main__':
     publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6, latch=True )
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
-    import_path(path_to_trajectory)
-    set_start_and_delta_path(s_start)
+    import_path(path_to_trajectory, cs)
+    set_start_and_delta_path(s_start, velocity)
 
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
 
     spawn_time_seconds = rospy.get_param("~spawn_time")
     spawn_time = rospy.Duration(spawn_time_seconds)
-
 
     if not frame_id_initial_position == frame_id_loc_mgmt:
         tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0)) #tf buffer length
@@ -238,7 +244,7 @@ if __name__ == '__main__':
     # time.sleep(3)
 
     obj_init = ObjectInitialization()
-    obj_init.header = Header()
+    obj_init.header.stamp = rospy.Time.now()
     obj_init.header.frame_id = frame_id_loc_mgmt
     obj_init.object_id = object_id
 
@@ -268,6 +274,7 @@ if __name__ == '__main__':
     obj_init.initial_pose.position = pose_stamped.pose.position
     obj_init.initial_pose.orientation = pose_stamped.pose.orientation
 
+    obj_init.initial_delta_trajectory.header.stamp = rospy.Time.now()
     obj_init.initial_delta_trajectory.object_id = object_id
 
     for i in range(len(d_x_list)):

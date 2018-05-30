@@ -37,15 +37,16 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
 
-#include <simulation_utils/util_localization_mgmt.hpp>
+#include <automated_driving_msgs/MotionPrediction.h>
+#include <automated_driving_msgs/MotionState.h>
+#include <automated_driving_msgs/ObjectStateArray.h>
+#include <simulation_only_msgs/DeltaTrajectoryWithID.h>
+#include <simulation_only_msgs/ObjectInitialization.h>
+#include <simulation_only_msgs/ObjectRemoval.h>
+
 #include "localization_mgmt_types.hpp"
-#include "automated_driving_msgs/MotionPrediction.h"
-#include "automated_driving_msgs/MotionState.h"
-#include "automated_driving_msgs/ObjectStateArray.h"
 #include "simulation_management_ros_tool/LocalizationMgmtInterface.h"
-#include "simulation_only_msgs/DeltaTrajectoryWithID.h"
-#include "simulation_only_msgs/ObjectInitialization.h"
-#include "simulation_only_msgs/ObjectRemoval.h"
+
 
 namespace simulation_management_ros_tool {
 
@@ -67,8 +68,6 @@ private:
     // ros timer for publishing with constant frequency
     ros::Timer timer_;
 
-    // delay for the "no objects in memory" warning
-    double delayForNoObjectsWarning = 5.0;
     ros::Time startTime;
 
     dynamic_reconfigure::Server<LocalizationMgmtConfig> reconfigSrv_; // Dynamic reconfiguration service

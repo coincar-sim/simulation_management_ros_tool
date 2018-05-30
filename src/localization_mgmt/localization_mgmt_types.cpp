@@ -28,6 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <util_geometry_msgs/util_geometry_msgs.hpp>
+#include <util_simulation_only_msgs/util_simulation_only_msgs.hpp>
+
 #include "localization_mgmt_types.hpp"
 
 namespace localization_mgmt_types {
@@ -48,8 +51,9 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
         objectActive_ = true;
     }
 
-    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
+//    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;
+    deltaTrajectoryWithID_.header.stamp = timestampSpawn_;
 
     frameId_ = frameId;
     childFrameId_ = frameIdObjectsPrefix + std::to_string(objectID_).c_str();
@@ -80,7 +84,7 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
 
 void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajectory,
                                        const ros::Time& timestamp) {
-    if (util_localization_mgmt::deltaTrajectoryContainsNANs(deltaTrajectory)) {
+    if (util_simulation_only_msgs::containsNANs(deltaTrajectory)) {
         ROS_WARN_THROTTLE(1,
                           "Not regarding desired motion of object with id %s as it contains NANs",
                           std::to_string(objectID_).c_str());
@@ -97,8 +101,8 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
     interpolatePose(timestamp);
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
-    startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
-    // check if delta pose contains NANs
+    deltaTrajectoryWithID_.header.stamp = timestamp;
+//    startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
 }
 
 void DynamicObject::interpolatePose(const ros::Time& timestamp) {
@@ -133,18 +137,30 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
             }
         }
 
-        double scale;
-        size_t i;
 
-        std::tie(i, scale) = util_localization_mgmt::getInterpolationIndexAndScale(
-            deltaTrajectoryWithID_, startTimeOfDeltaTrajNsec_, timestamp);
-        objectActive_ = true;
+        geometry_msgs::Pose newDeltaPose;
+        bool valid;
+        std::string errMsg;
+        util_simulation_only_msgs::interpolateDeltaPose(deltaTrajectoryWithID_, timestamp, newDeltaPose, valid, errMsg);
 
-        geometry_msgs::Pose p0 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i].delta_pose;
-        geometry_msgs::Pose p1 = deltaTrajectoryWithID_.delta_poses_with_delta_time[i + 1].delta_pose;
-        geometry_msgs::Pose newDeltaPose = util_localization_mgmt::interpolatePose(p0, p1, scale);
+        if (valid) {
 
-        currPose_ = util_localization_mgmt::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+            objectActive_ = true;
+            geometry_msgs::Pose newPose = util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+            if (util_geometry_msgs::checks::containsNANs(newPose)) {
+                ROS_ERROR_THROTTLE(
+                    1, "Not updating motion state of object with id %s as computed pose contains NANs!", std::to_string(objectID_).c_str());
+                return;
+            }
+            currPose_ = newPose;
+
+
+        } else {
+            ROS_WARN_THROTTLE(1,
+                              "Not updating motion state of object with id %s as interpolation not valid: \"%s\")",
+                              std::to_string(objectID_).c_str(),
+                              errMsg.c_str());
+        }
         timestampOfLastUpdate_ = timestamp;
 
     } catch (std::exception& e) {
@@ -173,7 +189,8 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timest
     os.object_id = objectID_;
     os.classification = objectClassification_;
     os.existence_probability = 1.0;
-    os.motion_state = util_localization_mgmt::newMotionStatePoseOnly();
+    os.motion_state = newMotionStatePoseOnly();
+    assert(!util_geometry_msgs::checks::containsNANs(currPose_));
     os.motion_state.pose.pose = currPose_;
     os.motion_state.header.stamp = timestamp;
     os.motion_state.header.frame_id = frameId_;
@@ -183,15 +200,24 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timest
     // check if contains NANs
 }
 
-geometry_msgs::TransformStamped DynamicObject::toTransformStamped() {
-    geometry_msgs::TransformStamped tfs;
+void DynamicObject::getTransformStamped(geometry_msgs::TransformStamped& tfs, bool& valid) {
+
+    assert(!util_geometry_msgs::checks::containsNANs(currPose_));
+
     tfs.header.stamp = timestampOfLastUpdate_;
     tfs.header.frame_id = frameId_;
     // add prefix to prevent usage of TF instead of motion state; TF is only provided for visualization
     tfs.child_frame_id = "visualization_only__" + childFrameId_;
-    tfs.transform = util_localization_mgmt::transformFromPose(currPose_);
-    return tfs;
-    // check if contains NANs
+    tfs.transform = util_geometry_msgs::conversions::transformFromPose(currPose_);
+    if (!util_geometry_msgs::checks::quaternionNormalized(tfs.transform.rotation)) {
+        ROS_WARN_THROTTLE(1,
+                          "No valid transform for object with id %s as quaternion not normalized",
+                          std::to_string(objectID_).c_str());
+        valid = false;
+        return;
+    }
+
+    valid = true;
 }
 
 
@@ -231,7 +257,7 @@ void DynamicObjectArray::determineActiveStateAndInterpolatePoses(const ros::Time
     timestampOfLastUpdate_ = timestamp;
 }
 
-void DynamicObjectArray::removeObject(const int objectId) {
+void DynamicObjectArray::removeObject(const unsigned int objectId) {
     objectStateMap_.erase(objectId);
 }
 
@@ -239,11 +265,11 @@ bool DynamicObjectArray::containsObjects() {
     return !objectStateMap_.empty();
 }
 
-bool DynamicObjectArray::checkObjectExistence(const int objectId) {
+bool DynamicObjectArray::checkObjectExistence(const unsigned int objectId) {
     return (objectStateMap_.count(objectId) > 0);
 }
 
-dyn_obj_ptr_t DynamicObjectArray::getObjectStateById(const int objectId) {
+dyn_obj_ptr_t DynamicObjectArray::getObjectStateById(const unsigned int objectId) {
     auto it = objectStateMap_.find(objectId);
     if (it == objectStateMap_.end()) {
         throw std::runtime_error("Object with id " + std::to_string(objectId) + "not in List");
@@ -276,9 +302,7 @@ std::vector<dyn_obj_ptr_t> DynamicObjectArray::getActiveObjectStates() {
 
 automated_driving_msgs::ObjectStateArray DynamicObjectArray::activeObjectsToMsg(const ros::Time& timestamp) {
 
-    if (timestamp != timestampOfLastUpdate_) {
-        throw std::runtime_error("Requested timestamp of message differs from timestamp of objectStates");
-    }
+    determineActiveStateAndInterpolatePoses(timestamp);
     automated_driving_msgs::ObjectStateArray osa;
     osa.header.stamp = timestamp;
     osa.header.frame_id = frameId_;
@@ -288,6 +312,15 @@ automated_driving_msgs::ObjectStateArray DynamicObjectArray::activeObjectsToMsg(
         osa.objects[i] = objectStateVector[i]->toMsg(timestamp);
     }
     return osa;
+}
+
+automated_driving_msgs::MotionState newMotionStatePoseOnly() {
+
+    automated_driving_msgs::MotionState ms;
+    ms.pose.covariance = util_geometry_msgs::checks::covarianceGroundTruthValues;
+    ms.twist.covariance = util_geometry_msgs::checks::covarianceUnkownValues;
+    ms.accel.covariance = util_geometry_msgs::checks::covarianceUnkownValues;
+    return ms;
 }
 
 } // namespace localization_mgmt_types

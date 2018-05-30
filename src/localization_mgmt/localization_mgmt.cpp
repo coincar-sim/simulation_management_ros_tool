@@ -143,12 +143,12 @@ void LocalizationMgmt::objectStatePublisher(const ros::TimerEvent& event) {
 
     if (objectArray_.containsObjects()) {
 
-        objectArray_.determineActiveStateAndInterpolatePoses(timestamp);
+//        objectArray_.determineActiveStateAndInterpolatePoses(timestamp);
         objectsGroundTruthPub_.publish(objectArray_.activeObjectsToMsg(timestamp));
         broadcastTF();
 
     } else {
-        if ((timestamp - startTime).toSec() > delayForNoObjectsWarning)
+        if ((timestamp - startTime).toSec() > params_.delay_for_no_objects_warning)
             ROS_WARN_THROTTLE(1, "%s: Publishing but no objects in memory!", ros::this_node::getName().c_str());
     }
 }
@@ -160,8 +160,12 @@ void LocalizationMgmt::broadcastTF() {
 
     std::vector<localization_mgmt_types::dyn_obj_ptr_t> objectStateVector = objectArray_.getActiveObjectStates();
     for (localization_mgmt_types::dyn_obj_ptr_t objPtr : objectStateVector) {
-
-        tfBroadcaster_.sendTransform(objPtr->toTransformStamped());
+        bool transformValid;
+        geometry_msgs::TransformStamped transform;
+        objPtr->getTransformStamped(transform, transformValid);
+        if (transformValid) {
+            tfBroadcaster_.sendTransform(transform);
+        }
     }
 }
 

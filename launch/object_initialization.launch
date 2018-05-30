@@ -12,6 +12,7 @@
 <arg name="spawn_time" default="0.0" />
 <arg name="frame_id_initial_position" />
 <arg name="frame_id_loc_mgmt" />
+<arg name="navsatfix_topic" />
 
 <node pkg="simulation_management_ros_tool" type="object_initialization.py" name="object_initialization" output="screen" >
     <param name="object_id" value="$(arg object_id)" />
@@ -24,6 +25,7 @@
     <param name="spawn_time" value="$(arg spawn_time)" />
     <param name="frame_id_initial_position" value="$(arg frame_id_initial_position)" />
     <param name="frame_id_loc_mgmt" value="$(arg frame_id_loc_mgmt)" />
+    <param name="navsatfix_topic" value="$(arg navsatfix_topic)" />
 
     <param name="object_initialization_topic" value="$(arg object_initialization_topic_with_ns)" />
 </node>

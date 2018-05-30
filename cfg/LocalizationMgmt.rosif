@@ -49,7 +49,8 @@ gen.add("desired_motion_in_topic_with_ns", paramtype='std::string', description=
 gen.add("object_initialization_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming initialization of the objects")
 gen.add("object_removal_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming removal requests")
 gen.add("objects_out_topic_with_ns", paramtype='std::string', description="Topicname for the published object states")
-gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishing object states", default=100.0, min=1.0, max=200.0, configurable=True)
+gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishing object states", default=50.0, min=1.0, max=200.0, configurable=True)
+gen.add("delay_for_no_objects_warning", paramtype='double', description="Frequency for publishing object states", default=5.0, min=0.0, max=10.0, configurable=True)
 gen.add("tf_topic_map", paramtype='std::string', description="Frame_id of fixed frame in which the objects are initialized and move, e.g. a UTM transform of lat lon coordinates")
 gen.add("frame_id_objects_prefix", paramtype='std::string', description="Frame_id prefix for objects", default="object")
 
