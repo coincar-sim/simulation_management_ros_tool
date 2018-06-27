@@ -172,6 +172,7 @@ void LocalizationMgmt::broadcastTF() {
         if (transformValid) {
             tfBroadcaster_.sendTransform(transform);
         }
+    }
 }
 
 void LocalizationMgmt::resetObjectPoseCallback(const automated_driving_msgs::ObjectState& msg){
