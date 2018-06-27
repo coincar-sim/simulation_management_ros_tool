@@ -7,6 +7,7 @@
    <arg name="object_removal_topic_with_ns" />
 
    <arg name="fixed_frame" />
+   <arg name="reset_object_pose_topic" />
 
    <!-- Launch Time Management -->
    <node pkg="simulation_management_ros_tool" type="time_mgmt" name="time_mgmt" output="screen">
@@ -22,6 +23,7 @@
 
         <param name="verbosity" value="info" />
         <param name="tf_topic_map" value="$(arg fixed_frame)" />
+        <param name="reset_object_pose_topic" value="$(arg reset_object_pose_topic)" />
    </node>
 
 </launch>

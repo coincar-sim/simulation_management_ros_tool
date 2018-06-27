@@ -53,7 +53,7 @@ gen.add("loc_mgmt_freq", paramtype='double', description="Frequency for publishi
 gen.add("delay_for_no_objects_warning", paramtype='double', description="Frequency for publishing object states", default=5.0, min=0.0, max=10.0, configurable=True)
 gen.add("tf_topic_map", paramtype='std::string', description="Frame_id of fixed frame in which the objects are initialized and move, e.g. a UTM transform of lat lon coordinates")
 gen.add("frame_id_objects_prefix", paramtype='std::string', description="Frame_id prefix for objects", default="object")
-
+gen.add("reset_object_pose_topic", paramtype='std::string', description="Topicname for pose reset request of an object", default="default_localization_mgmt_reset_pose_topic")
 
 # DO NOT TOUCH THIS LINE
 #Syntax : Package, Node, Config Name(The final name will be LocalizationMgmtConfig)

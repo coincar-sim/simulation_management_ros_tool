@@ -66,6 +66,12 @@ LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle 
                                               this,
                                               ros::TransportHints().tcpNoDelay());
 
+    resetObjectPoseSub_ = node_handle.subscribe(params_.reset_object_pose_topic,
+                                                params_.msg_queue_size,
+                                                &LocalizationMgmt::resetObjectPoseCallback,
+                                                this,
+                                                ros::TransportHints().tcpNoDelay());
+
     timer_ = private_node_handle.createTimer(
         ros::Duration(1.0 / params_.loc_mgmt_freq), &LocalizationMgmt::objectStatePublisher, this);
 }
@@ -166,6 +172,21 @@ void LocalizationMgmt::broadcastTF() {
         if (transformValid) {
             tfBroadcaster_.sendTransform(transform);
         }
+}
+
+void LocalizationMgmt::resetObjectPoseCallback(const automated_driving_msgs::ObjectState& msg){
+    if(objectArray_.checkObjectExistence(msg.object_id)) {
+        localization_mgmt_types::dyn_obj_ptr_t objStatePtr = objectArray_.getObjectStateById(msg.object_id);
+
+        objStatePtr->setCurrPose(msg.motion_state.pose.pose);
+
+
+
+    }else {
+        ROS_WARN("%s: Received ObjectState.msg of Object that does not exist! I "
+                         "discard this message! (id=%s)",
+                 ros::this_node::getName().c_str(),
+                 std::to_string(msg.object_id).c_str());
     }
 }
 

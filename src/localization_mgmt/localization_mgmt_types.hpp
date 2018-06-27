@@ -63,6 +63,7 @@ public:
     automated_driving_msgs::ObjectState toMsg(const ros::Time& timestamp);
     void getTransformStamped(geometry_msgs::TransformStamped& tfs, bool& valid);
 
+    void setCurrPose(geometry_msgs::Pose pose);
 private:
     unsigned int objectID_;
 

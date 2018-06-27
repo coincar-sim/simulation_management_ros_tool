@@ -59,6 +59,7 @@ private:
     ros::Subscriber desiredMotionSub_;
     ros::Subscriber objectInitializationSub_;
     ros::Subscriber objectRemovalSub_;
+    ros::Subscriber resetObjectPoseSub_;
 
     LocalizationMgmtInterface params_;
 
@@ -82,6 +83,7 @@ private:
     void objectInitializationSubCallback(const simulation_only_msgs::ObjectInitialization& msg);
     void objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg);
     void reconfigureRequest(LocalizationMgmtConfig&, uint32_t);
+    void resetObjectPoseCallback(const automated_driving_msgs::ObjectState& msg);
 };
 
 } // namespace simulation_management_ros_tool

@@ -217,7 +217,9 @@ void DynamicObject::getTransformStamped(geometry_msgs::TransformStamped& tfs, bo
         return;
     }
 
-    valid = true;
+void DynamicObject::setCurrPose(geometry_msgs::Pose pose) {
+    currPose_ = pose;
+    poseAtStartOfDeltaTraj_ = pose;
 }
 
 
