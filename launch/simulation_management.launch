@@ -7,7 +7,7 @@
    <arg name="object_removal_topic_with_ns" />
 
    <arg name="fixed_frame" />
-   <arg name="reset_object_pose_topic" />
+   <arg name="reset_object_pose_topic" default="default_reset_object_pose_topic"/>
 
    <!-- Launch Time Management -->
    <node pkg="simulation_management_ros_tool" type="time_mgmt" name="time_mgmt" output="screen">
