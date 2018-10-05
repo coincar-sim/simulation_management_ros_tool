@@ -73,6 +73,7 @@ private:
     ros::Time timestampRemoval_;
     geometry_msgs::Pose currPose_;
     geometry_msgs::Pose poseAtStartOfDeltaTraj_;
+    automated_driving_msgs::MotionPrediction currPrediction_{};
 
     std::string frameId_;
     std::string childFrameId_;

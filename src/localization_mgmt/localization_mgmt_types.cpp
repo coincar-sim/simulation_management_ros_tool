@@ -51,7 +51,7 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
         objectActive_ = true;
     }
 
-//    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
+    //    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;
     deltaTrajectoryWithID_.header.stamp = timestampSpawn_;
 
@@ -102,7 +102,7 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
     deltaTrajectoryWithID_.header.stamp = timestamp;
-//    startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
+    //    startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
 }
 
 void DynamicObject::interpolatePose(const ros::Time& timestamp) {
@@ -125,6 +125,27 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
             // for a static obstacle the position does not have to be recalculated
             objectActive_ = true;
             timestampOfLastUpdate_ = timestamp;
+            // dirty hack ON
+            automated_driving_msgs::Trajectory traj;
+            traj.id = 1;
+            traj.probability = 1.;
+
+            for (size_t i = 1; i < 11; i++) {
+                ros::Time tsPrediction = timestamp + ros::Duration((int)i, 0);
+
+                automated_driving_msgs::MotionState ms;
+                ms.header.stamp = tsPrediction;
+                ms.header.frame_id = frameId_;
+                ms.child_frame_id = childFrameId_;
+                ms.pose.pose = currPose_;
+                traj.motion_states.push_back(ms);
+            }
+            automated_driving_msgs::MotionPrediction pred;
+            pred.header.frame_id = frameId_;
+            pred.header.stamp = timestamp;
+            pred.trajectories.push_back(traj);
+            currPrediction_ = pred;
+            // dirty hack OFF
             return;
         }
 
@@ -146,10 +167,12 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
         if (valid) {
 
             objectActive_ = true;
-            geometry_msgs::Pose newPose = util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+            geometry_msgs::Pose newPose =
+                util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
             if (util_geometry_msgs::checks::containsNANs(newPose)) {
-                ROS_ERROR_THROTTLE(
-                    1, "Not updating motion state of object with id %s as computed pose contains NANs!", std::to_string(objectID_).c_str());
+                ROS_ERROR_THROTTLE(1,
+                                   "Not updating motion state of object with id %s as computed pose contains NANs!",
+                                   std::to_string(objectID_).c_str());
                 return;
             }
             currPose_ = newPose;
@@ -162,6 +185,49 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
                               errMsg.c_str());
         }
         timestampOfLastUpdate_ = timestamp;
+
+        // dirty hack ON
+        automated_driving_msgs::Trajectory traj;
+        traj.id = 1;
+        traj.probability = 1.;
+
+        for (size_t i = 1; i < 11; i++) {
+            ros::Time tsPrediction = timestamp + ros::Duration((int)i, 0);
+            geometry_msgs::Pose newDeltaPose;
+            bool valid;
+            std::string errMsg;
+            util_simulation_only_msgs::interpolateDeltaPose(
+                deltaTrajectoryWithID_, tsPrediction, newDeltaPose, valid, errMsg);
+            if (valid) {
+                geometry_msgs::Pose newPose =
+                    util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+                if (util_geometry_msgs::checks::containsNANs(newPose)) {
+                    ROS_ERROR_THROTTLE(1,
+                                       "Error in prediction of object with id %s as computed pose contains NANs !",
+                                       std::to_string(objectID_).c_str());
+                    continue;
+                }
+                automated_driving_msgs::MotionState ms;
+                ms.header.stamp = tsPrediction;
+                ms.header.frame_id = frameId_;
+                ms.child_frame_id = childFrameId_;
+                ms.pose.pose = newPose;
+                traj.motion_states.push_back(ms);
+            } else {
+                ROS_ERROR_THROTTLE(1,
+                                   "Error in prediction of object with id %s as interpolation failed !",
+                                   std::to_string(objectID_).c_str());
+            }
+        }
+
+        automated_driving_msgs::MotionPrediction pred;
+        if (!traj.motion_states.empty()) {
+            pred.header.frame_id = frameId_;
+            pred.header.stamp = timestamp;
+            pred.trajectories.push_back(traj);
+        }
+        currPrediction_ = pred;
+        // dirty hack OFF
 
     } catch (std::exception& e) {
         ROS_WARN_THROTTLE(1,
@@ -196,6 +262,9 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timest
     os.motion_state.header.frame_id = frameId_;
     os.motion_state.child_frame_id = childFrameId_;
     os.hull = hull_;
+    // dirty hack ON
+    os.motion_prediction = currPrediction_;
+    // dirty hack OFF
     return os;
     // check if contains NANs
 }
