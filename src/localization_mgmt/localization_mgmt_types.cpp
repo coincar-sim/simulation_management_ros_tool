@@ -51,7 +51,6 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
         objectActive_ = true;
     }
 
-//    startTimeOfDeltaTrajNsec_ = timestampSpawn_.toNSec();
     deltaTrajectoryWithID_ = initMsg.initial_delta_trajectory;
     deltaTrajectoryWithID_.header.stamp = timestampSpawn_;
 
@@ -77,7 +76,7 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
                             initMsg.initial_delta_trajectory.delta_poses_with_delta_time.back().delta_time;
     }
     if (objectRole_ == OBJECT_ROLE::OBSTACLE_STATIC) {
-        currPose_ = poseAtStartOfDeltaTraj_;
+        currPose_ = initMsg.initial_pose;
     }
 }
 
@@ -98,12 +97,52 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
         return;
     }
 
+    if (trajectoryMode_ == TRAJECTORY_MODE::ABSOLUTE) {
+        ROS_WARN_THROTTLE(1,
+                          "Received an delta trajectory but previously received an absolute for object with id %s."
+                          "Probably undesired?",
+                          std::to_string(objectID_).c_str());
+    }
+    trajectoryMode_ = TRAJECTORY_MODE::DELTA;
+
     interpolatePose(timestamp);
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
     deltaTrajectoryWithID_.header.stamp = timestamp;
-//    startTimeOfDeltaTrajNsec_ = timestamp.toNSec();
 }
+
+void DynamicObject::newAbsoluteTrajectory(const simulation_only_msgs::AbsoluteTrajectoryWithID& msg) {
+
+    if (util_simulation_only_msgs::containsNANs(msg)) {
+        ROS_WARN_THROTTLE(1,
+                          "Not regarding desired motion of object with id %s as it contains NANs",
+                          std::to_string(objectID_).c_str());
+        return;
+    }
+
+    if (objectRole_ != OBJECT_ROLE::AGENT_OPERATED) {
+        ROS_WARN_THROTTLE(1,
+                          "Not regarding desired motion of object with id %s as this is not an operated agent",
+                          std::to_string(objectID_).c_str());
+        return;
+    }
+
+    if (!(msg.header.frame_id == frameId_)) {
+        ROS_ERROR_STREAM("Absolute trajectory for object with id " + std::to_string(msg.object_id) + " is in frame " +
+                         msg.header.frame_id + " but should be in " + frameId_ + ". Not updating it!");
+        return;
+    }
+
+    if (trajectoryMode_ == TRAJECTORY_MODE::DELTA) {
+        ROS_WARN_THROTTLE(1,
+                          "Received an absolute trajectory but previously received a delta for object with id %s."
+                          "Probably undesired?",
+                          std::to_string(objectID_).c_str());
+    }
+    trajectoryMode_ = TRAJECTORY_MODE::ABSOLUTE;
+    currentTrajectory_ = msg;
+}
+
 
 void DynamicObject::interpolatePose(const ros::Time& timestamp) {
     try {
@@ -138,18 +177,29 @@ void DynamicObject::interpolatePose(const ros::Time& timestamp) {
         }
 
 
-        geometry_msgs::Pose newDeltaPose;
+        geometry_msgs::Pose newPose;
         bool valid;
         std::string errMsg;
-        util_simulation_only_msgs::interpolateDeltaPose(deltaTrajectoryWithID_, timestamp, newDeltaPose, valid, errMsg);
+
+        // if in mode absolute, there is no start+delta; else=default is delta mode, as on initialization
+        if (trajectoryMode_ == TRAJECTORY_MODE::ABSOLUTE) {
+            util_simulation_only_msgs::interpolatePose(currentTrajectory_, timestamp, newPose, valid, errMsg);
+        } else {
+            geometry_msgs::Pose newDeltaPose;
+            util_simulation_only_msgs::interpolateDeltaPose(
+                deltaTrajectoryWithID_, timestamp, newDeltaPose, valid, errMsg);
+            if (valid) {
+                newPose = util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
+            }
+        }
 
         if (valid) {
 
             objectActive_ = true;
-            geometry_msgs::Pose newPose = util_geometry_msgs::computations::addDeltaPose(poseAtStartOfDeltaTraj_, newDeltaPose);
             if (util_geometry_msgs::checks::containsNANs(newPose)) {
-                ROS_ERROR_THROTTLE(
-                    1, "Not updating motion state of object with id %s as computed pose contains NANs!", std::to_string(objectID_).c_str());
+                ROS_ERROR_THROTTLE(1,
+                                   "Not updating motion state of object with id %s as computed pose contains NANs!",
+                                   std::to_string(objectID_).c_str());
                 return;
             }
             currPose_ = newPose;

@@ -66,6 +66,12 @@ LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle 
                                               this,
                                               ros::TransportHints().tcpNoDelay());
 
+    desiredMotionAbsoluteSub_ = node_handle.subscribe(params_.desired_motion_absolute_in_topic_with_ns,
+                                                      params_.msg_queue_size,
+                                                      &LocalizationMgmt::desiredMotionAbsoluteSubCallback,
+                                                      this,
+                                                      ros::TransportHints().tcpNoDelay());
+
     timer_ = private_node_handle.createTimer(
         ros::Duration(1.0 / params_.loc_mgmt_freq), &LocalizationMgmt::objectStatePublisher, this);
 }
@@ -87,6 +93,24 @@ void LocalizationMgmt::desiredMotionSubCallback(const simulation_only_msgs::Delt
                  std::to_string(msg.object_id).c_str());
     }
 }
+
+/**
+ * @brief assigns the incoming desired motion to the respective object (if exists)
+ * @param msg
+ */
+void LocalizationMgmt::desiredMotionAbsoluteSubCallback(const simulation_only_msgs::AbsoluteTrajectoryWithID& msg) {
+    if (objectArray_.checkObjectExistence(msg.object_id) == true) {
+
+        objectArray_.getObjectStateById(msg.object_id)->newAbsoluteTrajectory(msg);
+
+    } else {
+        ROS_WARN("%s: Received DesiredMotionAbsolute of Object that does not exist! I "
+                 "discard this message! (id=%s)",
+                 ros::this_node::getName().c_str(),
+                 std::to_string(msg.object_id).c_str());
+    }
+}
+
 
 /**
  * @brief Callback for object initializations
@@ -143,7 +167,7 @@ void LocalizationMgmt::objectStatePublisher(const ros::TimerEvent& event) {
 
     if (objectArray_.containsObjects()) {
 
-//        objectArray_.determineActiveStateAndInterpolatePoses(timestamp);
+        //        objectArray_.determineActiveStateAndInterpolatePoses(timestamp);
         objectsGroundTruthPub_.publish(objectArray_.activeObjectsToMsg(timestamp));
         broadcastTF();
 

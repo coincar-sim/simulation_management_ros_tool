@@ -57,6 +57,7 @@ public:
 private:
     ros::Publisher objectsGroundTruthPub_;
     ros::Subscriber desiredMotionSub_;
+    ros::Subscriber desiredMotionAbsoluteSub_;
     ros::Subscriber objectInitializationSub_;
     ros::Subscriber objectRemovalSub_;
 
@@ -79,6 +80,7 @@ private:
     void broadcastTF();
     void objectStatePublisher(const ros::TimerEvent& event);
     void desiredMotionSubCallback(const simulation_only_msgs::DeltaTrajectoryWithID& msg);
+    void desiredMotionAbsoluteSubCallback(const simulation_only_msgs::AbsoluteTrajectoryWithID& msg);
     void objectInitializationSubCallback(const simulation_only_msgs::ObjectInitialization& msg);
     void objectRemovalSubCallback(const simulation_only_msgs::ObjectRemoval& msg);
     void reconfigureRequest(LocalizationMgmtConfig&, uint32_t);

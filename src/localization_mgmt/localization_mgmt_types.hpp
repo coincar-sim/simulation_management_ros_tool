@@ -38,6 +38,7 @@
 #include <automated_driving_msgs/MotionPrediction.h>
 #include <automated_driving_msgs/MotionState.h>
 #include <automated_driving_msgs/ObjectStateArray.h>
+#include <simulation_only_msgs/AbsoluteTrajectoryWithID.h>
 #include <simulation_only_msgs/DeltaTrajectoryWithID.h>
 #include <simulation_only_msgs/ObjectInitialization.h>
 #include <simulation_only_msgs/ObjectRemoval.h>
@@ -48,6 +49,7 @@ namespace localization_mgmt_types {
 
 enum class OBJECT_ROLE { OBSTACLE_STATIC = 10, OBSTACLE_DYNAMIC = 20, AGENT_OPERATED = 100 };
 
+enum class TRAJECTORY_MODE { NONE = 0, DELTA = 1, ABSOLUTE = 2 };
 
 class DynamicObject {
 public:
@@ -57,6 +59,7 @@ public:
                   const std::string& frameIdObjectsPrefix);
 
     void newDeltaTrajectory(const simulation_only_msgs::DeltaTrajectoryWithID&, const ros::Time& timestamp);
+    void newAbsoluteTrajectory(const simulation_only_msgs::AbsoluteTrajectoryWithID& msg);
     void interpolatePose(const ros::Time& timestamp);
     bool isActive();
 
@@ -71,8 +74,6 @@ private:
     ros::Time timestampOfLastUpdate_;
     ros::Time timestampSpawn_;
     ros::Time timestampRemoval_;
-    geometry_msgs::Pose currPose_;
-    geometry_msgs::Pose poseAtStartOfDeltaTraj_;
 
     std::string frameId_;
     std::string childFrameId_;
@@ -80,9 +81,15 @@ private:
     OBJECT_ROLE objectRole_;
     bool objectActive_;
 
+    geometry_msgs::Pose currPose_;
+
     automated_driving_msgs::ObjectClassification objectClassification_;
-    simulation_only_msgs::DeltaTrajectoryWithID deltaTrajectoryWithID_;
     shape_msgs::Mesh hull_;
+
+    TRAJECTORY_MODE trajectoryMode_{TRAJECTORY_MODE::NONE};
+    geometry_msgs::Pose poseAtStartOfDeltaTraj_;
+    simulation_only_msgs::DeltaTrajectoryWithID deltaTrajectoryWithID_;
+    simulation_only_msgs::AbsoluteTrajectoryWithID currentTrajectory_;
 };
 
 typedef std::shared_ptr<DynamicObject> dyn_obj_ptr_t;

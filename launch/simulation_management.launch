@@ -3,6 +3,7 @@
    <!-- Arguments that are passed from the top launchfile -->
    <arg name="objects_ground_truth_topic_with_ns" />
    <arg name="desired_motion_topic_with_ns" />
+   <arg name="desired_motion_absolute_topic_with_ns" />
    <arg name="object_initialization_topic_with_ns" />
    <arg name="object_removal_topic_with_ns" />
 
@@ -16,6 +17,7 @@
    <!-- Launch Localization Management -->
    <node pkg="simulation_management_ros_tool" type="localization_mgmt" name="localization_mgmt" output="screen">
         <param name="desired_motion_in_topic_with_ns" value="$(arg desired_motion_topic_with_ns)"/>
+        <param name="desired_motion_absolute_in_topic_with_ns" value="$(arg desired_motion_absolute_topic_with_ns)"/>
         <param name="objects_out_topic_with_ns" value="$(arg objects_ground_truth_topic_with_ns)"/>
         <param name="object_initialization_in_topic_with_ns" value="$(arg object_initialization_topic_with_ns)"/>
         <param name="object_removal_in_topic_with_ns" value="$(arg object_removal_topic_with_ns)" />

@@ -46,6 +46,7 @@ gen.add_verbosity_param(configurable=True)
 
 # Your Params here
 gen.add("desired_motion_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming desired motion of the objects")
+gen.add("desired_motion_absolute_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming desired motion of the objects as absolute trajectory, no deltas")
 gen.add("object_initialization_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming initialization of the objects")
 gen.add("object_removal_in_topic_with_ns", paramtype='std::string', description="Topicname for incoming removal requests")
 gen.add("objects_out_topic_with_ns", paramtype='std::string', description="Topicname for the published object states")
