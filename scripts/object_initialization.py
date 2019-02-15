@@ -132,9 +132,13 @@ def set_start_and_delta_path(s_start_on_path, velocity):
 
     dx_second = x_list[i_start+1] - x_start
     dy_second = y_list[i_start+1] - y_start
-    dt_second = numpy.sqrt(dx_second**2 + dy_second**2) / velocity
     d_x_list.append(dx_second)
     d_y_list.append(dy_second)
+    if velocity < 0.001:
+        dt_second = 600.  # 10 minutes
+        d_t_list.append(dt_second)
+        return
+    dt_second = numpy.sqrt(dx_second**2 + dy_second**2) / velocity
     d_t_list.append(dt_second)
 
     for i in range(len(x_list)):
@@ -251,7 +255,7 @@ if __name__ == '__main__':
         transform = tf_buffer.lookup_transform(frame_id_loc_mgmt,
                                                frame_id_initial_position, #source frame
                                                rospy.Time(0), #get the tf at first available time
-                                               rospy.Duration(1.0)) #wait for 1 second
+                                               rospy.Duration(3.0)) #wait for 1 second
         pose_transformed = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
         pose_stamped = pose_transformed
 
@@ -263,24 +267,41 @@ if __name__ == '__main__':
     obj_init.initial_delta_trajectory.header.stamp = rospy.Time.now()
     obj_init.initial_delta_trajectory.object_id = object_id
 
-    for i in range(len(d_x_list)):
-        # delta_pose with orientation of previous section
-        if i>0:
-            dpwdt_p = DeltaPoseWithDeltaTime()
-            dpwdt_p.delta_time = rospy.Duration(d_t_list[i])
-            dpwdt_p.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
-            dpwdt_p.delta_pose.orientation = \
-                obj_init.initial_delta_trajectory.delta_poses_with_delta_time[-1].delta_pose.orientation
-            obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_p)
+    if velocity < 0.001:
+        # if velocity is almost zero, the object is initialized at full stop
+        dpwdt_p = DeltaPoseWithDeltaTime()
+        dpwdt_p.delta_time = rospy.Duration(d_t_list[0])
+        dpwdt_p.delta_pose.position = position_from_x_y(d_x_list[0], d_y_list[0])
+        alpha = atan2(d_y_list[1]-d_y_list[0], d_x_list[1]-d_x_list[0])
+        dpwdt_p.delta_pose.orientation = orientation_from_yaw(alpha)
+        obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_p)
 
-        # delta_pose with orientation of next section
-        if i < len(d_x_list)-1:
-            dpwdt_n = DeltaPoseWithDeltaTime()
-            dpwdt_n.delta_time = rospy.Duration(d_t_list[i])
-            dpwdt_n.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
-            alpha = atan2(d_y_list[i+1]-d_y_list[i], d_x_list[i+1]-d_x_list[i])
-            dpwdt_n.delta_pose.orientation = orientation_from_yaw(alpha)
-            obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
+        dpwdt_n = DeltaPoseWithDeltaTime()
+        dpwdt_n.delta_time = rospy.Duration(d_t_list[1])
+        dpwdt_n.delta_pose.position = position_from_x_y(d_x_list[0], d_y_list[0])
+        alpha = atan2(d_y_list[1]-d_y_list[0], d_x_list[1]-d_x_list[0])
+        dpwdt_n.delta_pose.orientation = orientation_from_yaw(alpha)
+        obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
+
+    else:
+        for i in range(len(d_x_list)):
+            # delta_pose with orientation of previous section
+            if i>0:
+                dpwdt_p = DeltaPoseWithDeltaTime()
+                dpwdt_p.delta_time = rospy.Duration(d_t_list[i])
+                dpwdt_p.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
+                dpwdt_p.delta_pose.orientation = \
+                    obj_init.initial_delta_trajectory.delta_poses_with_delta_time[-1].delta_pose.orientation
+                obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_p)
+
+            # delta_pose with orientation of next section
+            if i < len(d_x_list)-1:
+                dpwdt_n = DeltaPoseWithDeltaTime()
+                dpwdt_n.delta_time = rospy.Duration(d_t_list[i])
+                dpwdt_n.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
+                alpha = atan2(d_y_list[i+1]-d_y_list[i], d_x_list[i+1]-d_x_list[i])
+                dpwdt_n.delta_pose.orientation = orientation_from_yaw(alpha)
+                obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
 
     publisher.publish(obj_init)
     rospy.spin()
