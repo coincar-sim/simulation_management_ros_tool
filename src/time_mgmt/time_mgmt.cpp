@@ -56,6 +56,13 @@ TimeMgmt::TimeMgmt(ros::NodeHandle node_handle, ros::NodeHandle private_node_han
                                                  !params_.pause_time);
     startWallTime_ = ros::WallTime::now();
     startSimTime_ = startSimTime_.fromNSec(startWallTime_.toNSec());
+
+    // If simulation starts paused, publish /clock once for ros::Time::now() to be valid
+    if (params_.pause_time) {
+        rosgraph_msgs::Clock msgClock;
+        msgClock.clock = startSimTime_;
+        clockPub_.publish(msgClock);
+    }
 }
 
 /**
