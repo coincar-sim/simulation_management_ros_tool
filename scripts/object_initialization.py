@@ -41,22 +41,21 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import Header
 from shape_msgs.msg import Mesh
 from shape_msgs.msg import MeshTriangle
-from sensor_msgs.msg import NavSatFix
+
 import rospy
 import tf
 import tf2_ros
 import tf2_geometry_msgs
-from util_geo_coordinates_ros import CoordinateTransform
+
+import lanelet2
+import lanelet2_interface_ros
 
 # Regular Python Dependencies
 import time
 import xml.etree.ElementTree
-import pyproj
 import numpy
 from math import cos, sin, atan2
 
-lat_list = []
-lon_list = []
 x_list = []
 y_list = []
 d_x_list = []
@@ -90,16 +89,15 @@ def import_hull(xml_file):
     return mesh
 
 
-def import_path(xml_file, cs):
+def import_path(xml_file, geoCoordinateProjector):
     e = xml.etree.ElementTree.parse(xml_file).getroot()
-    global lat_list, lon_list, x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
+    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
 
     for node in e.findall('node'):
-        lat_list.append(float(node.get('lat')))
-        lon_list.append(float(node.get('lon')))
-        [x,y] = cs.ll2xy(lat_list[-1],lon_list[-1])
-        x_list.append(x)
-        y_list.append(y)
+        gps_point = lanelet2.core.GPSPoint(float(node.get('lat')), float(node.get('lon')))
+        xy_point = geoCoordinateProjector.forward(gps_point)
+        x_list.append(xy_point.x)
+        y_list.append(xy_point.y)
 
 
 def set_start_and_delta_path(s_start_on_path, velocity):
@@ -169,30 +167,17 @@ def position_from_x_y(x, y):
     return position
 
 
-def on_message(msg):
-    global cs
-    cs = CoordinateTransform(float(msg.latitude), float(msg.longitude))
 
 if __name__ == '__main__':
 
     rospy.init_node( 'object_initialization' )
 
-    navsatfix_topic = rospy.get_param("~navsatfix_topic")
-    rospy.Subscriber(navsatfix_topic, NavSatFix, on_message, queue_size=5)
-
-    wait_count = 0
-    rate = rospy.Rate(1.)
-    while not cs:
-        rospy.loginfo_throttle(3, "Waiting for navsatfix message on topic " + navsatfix_topic)
-        wait_count += 1
-        if wait_count > 20:
-            raise RuntimeError("Initialization of coordinate transform failed")
-        rate.sleep()
+    ll2if = lanelet2_interface_ros.Lanelet2InterfaceRos()
+    frame_id_initial_position = ll2if.waitForFrameIdMap(10., 10.)
 
     object_id = rospy.get_param("~object_id")
     velocity = rospy.get_param("~initial_v")
     s_start = rospy.get_param("~s_start", 0.0)
-    frame_id_initial_position = rospy.get_param("~frame_id_initial_position")
     frame_id_loc_mgmt = rospy.get_param("~frame_id_loc_mgmt")
     topic = rospy.get_param("~object_initialization_topic")
 
@@ -228,7 +213,8 @@ if __name__ == '__main__':
     publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6, latch=True )
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
-    import_path(path_to_trajectory, cs)
+    geoCoordinateProjector = ll2if.waitForProjectorPtr(10.,10.)
+    import_path(path_to_trajectory, geoCoordinateProjector)
     set_start_and_delta_path(s_start, velocity)
 
     path_to_hull = rospy.get_param("~hull_file")
