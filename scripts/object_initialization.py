@@ -90,14 +90,20 @@ def import_hull(xml_file):
 
 
 def import_path(xml_file, geoCoordinateProjector):
-    e = xml.etree.ElementTree.parse(xml_file).getroot()
     global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
 
-    for node in e.findall('node'):
-        gps_point = lanelet2.core.GPSPoint(float(node.get('lat')), float(node.get('lon')))
-        xy_point = geoCoordinateProjector.forward(gps_point)
-        x_list.append(xy_point.x)
-        y_list.append(xy_point.y)
+    path_osm = lanelet2.io.load(xml_file, geoCoordinateProjector)
+
+    if len(path_osm.lineStringLayer) != 1:
+        rospy.logerr("Only one way is allowed in path osm file! "
+                     + str(len(path_osm.lineStringLayer)) + " found in file "
+                     + xml_file + ". Shutting down!")
+        exit()
+
+    for way in path_osm.lineStringLayer:
+        for xy_point in way:
+            x_list.append(xy_point.x)
+            y_list.append(xy_point.y)
 
 
 def set_start_and_delta_path(s_start_on_path, velocity):
