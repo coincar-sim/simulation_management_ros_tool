@@ -257,7 +257,8 @@ void DynamicObject::getTransformStamped(geometry_msgs::TransformStamped& tfs, bo
     tfs.header.stamp = timestampOfLastUpdate_;
     tfs.header.frame_id = frameId_;
     // add prefix to prevent usage of TF instead of motion state; TF is only provided for visualization
-    tfs.child_frame_id = "visualization_only__" + childFrameId_;
+    // HACK: REMOVED PREFIX
+    tfs.child_frame_id = childFrameId_;
     tfs.transform = util_geometry_msgs::conversions::transformFromPose(currPose_);
     if (!util_geometry_msgs::checks::quaternionNormalized(tfs.transform.rotation)) {
         ROS_WARN_THROTTLE(1,
