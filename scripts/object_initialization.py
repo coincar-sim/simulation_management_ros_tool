@@ -192,13 +192,20 @@ if __name__ == '__main__':
     topic = rospy.get_param("~object_initialization_topic")
 
     object_type_name = rospy.get_param("~object_type")
-    object_type_id = 0
+    object_type_id = ObjectClassification.UNCLASSIFIED
     if object_type_name == "car":
-        object_type_id = 4
+        object_type_id = ObjectClassification.CAR
     elif object_type_name == "pedestrian":
-        object_type_id = 1
+        object_type_id = ObjectClassification.PEDESTRIAN
+    elif object_type_name == "bicycle":
+        object_type_id = ObjectClassification.BICYCLE
+    elif object_type_name == "motorbike":
+        object_type_id = ObjectClassification.MOTORBIKE
+    elif object_type_name == "truck":
+        object_type_id = ObjectClassification.TRUCK
     else:
-        rospy.logwarn("Object Type \"%s\" not known; currently known: \"car\", \"pedestrian\""%object_type_name)
+        rospy.logwarn("Object Type \"%s\" not supported; currently supported: \"car\", \"pedestrian\", \"truck\"," + \
+                      "\"motorbike\", \"bicycle\"; classifying object as \"unclassified\""%object_type_name)
     cwp = ClassWithProbability()
     cwp.classification = object_type_id
     cwp.probability = 1.
