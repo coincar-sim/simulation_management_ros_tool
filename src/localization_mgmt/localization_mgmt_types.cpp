@@ -105,9 +105,28 @@ void DynamicObject::newDeltaTrajectory(const simulation_only_msgs::DeltaTrajecto
     }
     trajectoryMode_ = TRAJECTORY_MODE::DELTA;
 
+    // use only that part of the delta trajectory that does not lie in past:
+    // compute where we currently are within the delta trajectory
+    bool valid;
+    std::string errMsg;
+    geometry_msgs::Pose currentDeltaPose;
+    util_simulation_only_msgs::interpolateDeltaPose(deltaTrajectory, timestamp, currentDeltaPose, valid, errMsg);
+    if (!valid) {
+        ROS_WARN_STREAM_THROTTLE(1,
+                                 "Not regarding desired motion of object with id "
+                                     << objectID_ << " , could not interpolate the current delta pose: " << errMsg);
+        return;
+    }
     interpolatePose(timestamp);
     poseAtStartOfDeltaTraj_ = currPose_;
     deltaTrajectoryWithID_ = deltaTrajectory;
+    ros::Duration diff = timestamp - deltaTrajectory.header.stamp;
+    for (auto& deltaPose : deltaTrajectoryWithID_.delta_poses_with_delta_time) {
+        // subtract that part of the delta trajectory that lies in past
+        deltaPose.delta_time -= diff;
+        deltaPose.delta_pose = util_geometry_msgs::computations::calcDeltaPose(currentDeltaPose, deltaPose.delta_pose);
+    }
+
     deltaTrajectoryWithID_.header.stamp = timestamp;
 }
 
