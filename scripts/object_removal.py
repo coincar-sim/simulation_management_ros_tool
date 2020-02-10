@@ -31,7 +31,7 @@
 
 # ROS Dependencies
 import roslib
-from simulation_only_msgs.msg import  ObjectRemoval
+from simulation_only_msgs.msg import ObjectRemoval
 from std_msgs.msg import Header
 import rospy
 
@@ -40,13 +40,13 @@ import time
 
 if __name__ == '__main__':
 
-    rospy.init_node( 'object_initialization' )
+    rospy.init_node('object_initialization')
 
     object_id = rospy.get_param("~object_id")
     time_of_removal_walltime = float(rospy.get_param("~time_of_removal_walltime"))
     topic = rospy.get_param("~object_removal_topic")
 
-    publisher = rospy.Publisher( topic, ObjectRemoval, queue_size=6 )
+    publisher = rospy.Publisher(topic, ObjectRemoval, queue_size=6)
 
     time.sleep(time_of_removal_walltime)
 

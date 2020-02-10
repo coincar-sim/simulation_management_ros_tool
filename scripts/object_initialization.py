@@ -33,7 +33,7 @@
 # ROS Dependencies
 import roslib
 from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, ClassWithProbability, ObjectClassification
-from simulation_only_msgs.msg import  ObjectInitialization, DeltaTrajectoryWithID, ObjectRole
+from simulation_only_msgs.msg import ObjectInitialization, DeltaTrajectoryWithID, ObjectRole
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Quaternion
@@ -66,6 +66,7 @@ y_start = None
 velocity = None
 object_id = None
 cs = None
+
 
 def import_hull(xml_file):
     e = xml.etree.ElementTree.parse(xml_file).getroot()
@@ -117,27 +118,26 @@ def set_start_and_delta_path(s_start_on_path, velocity):
         d_s_list_ = [0.0]
         for i in range(len(x_list)):
             if i > 0:
-                d_s = numpy.sqrt((x_list[i]-x_list[i-1])**2 + (y_list[i]-y_list[i-1])**2)
+                d_s = numpy.sqrt((x_list[i] - x_list[i - 1])**2 + (y_list[i] - y_list[i - 1])**2)
                 d_s_list_.append(d_s_list_[-1] + d_s)
                 if d_s_list_[-1] > s_start_on_path:
-                    i_start = i-1
+                    i_start = i - 1
                     scale = (s_start_on_path - d_s_list_[-2]) / (d_s_list_[-1] - d_s_list_[-2])
                     found = True
                     break
         if not found:
-            rospy.logerr("Could not find initial position, is the given " + \
-                         "s_start_on_path (" + str(s_start_on_path) + ")" + \
+            rospy.logerr("Could not find initial position, is the given " +
+                         "s_start_on_path (" + str(s_start_on_path) + ")" +
                          " longer than the path? ")
 
-
-    x_start = x_list[i_start] + scale * (x_list[i_start+1] - x_list[i_start])
-    y_start = y_list[i_start] + scale * (y_list[i_start+1] - y_list[i_start])
+    x_start = x_list[i_start] + scale * (x_list[i_start + 1] - x_list[i_start])
+    y_start = y_list[i_start] + scale * (y_list[i_start + 1] - y_list[i_start])
     d_x_list = [0.0]
     d_y_list = [0.0]
     d_t_list = [0.0]
 
-    dx_second = x_list[i_start+1] - x_start
-    dy_second = y_list[i_start+1] - y_start
+    dx_second = x_list[i_start + 1] - x_start
+    dy_second = y_list[i_start + 1] - y_start
     d_x_list.append(dx_second)
     d_y_list.append(dy_second)
     if velocity < 0.001:
@@ -148,12 +148,12 @@ def set_start_and_delta_path(s_start_on_path, velocity):
     d_t_list.append(dt_second)
 
     for i in range(len(x_list)):
-        if i > i_start+1:
+        if i > i_start + 1:
             dx_total = x_list[i] - x_start
             dy_total = y_list[i] - y_start
-            dx_relative = x_list[i] - x_list[i-1]
-            dy_relative = y_list[i] - y_list[i-1]
-            dt = (numpy.sqrt(dx_relative**2 + dy_relative**2) / velocity ) + d_t_list[-1]
+            dx_relative = x_list[i] - x_list[i - 1]
+            dy_relative = y_list[i] - y_list[i - 1]
+            dt = (numpy.sqrt(dx_relative**2 + dy_relative**2) / velocity) + d_t_list[-1]
             d_x_list.append(dx_total)
             d_y_list.append(dy_total)
             d_t_list.append(dt)
@@ -177,10 +177,9 @@ def position_from_x_y(x, y):
     return position
 
 
-
 if __name__ == '__main__':
 
-    rospy.init_node( 'object_initialization' )
+    rospy.init_node('object_initialization')
 
     ll2if = lanelet2_interface_ros.Lanelet2InterfaceRos()
     frame_id_initial_position = ll2if.waitForFrameIdMap(10., 10.)
@@ -204,8 +203,8 @@ if __name__ == '__main__':
     elif object_type_name == "truck":
         object_type_id = ObjectClassification.TRUCK
     else:
-        rospy.logwarn("Object Type \"%s\" not supported; currently supported: \"car\", \"pedestrian\", \"truck\"," + \
-                      "\"motorbike\", \"bicycle\"; classifying object as \"unclassified\""%object_type_name)
+        rospy.logwarn("Object Type \"%s\" not supported; currently supported: \"car\", \"pedestrian\", \"truck\"," +
+                      "\"motorbike\", \"bicycle\"; classifying object as \"unclassified\"" % object_type_name)
     cwp = ClassWithProbability()
     cwp.classification = object_type_id
     cwp.probability = 1.
@@ -213,9 +212,9 @@ if __name__ == '__main__':
     object_classification.classes_with_probabilities.append(cwp)
 
     object_role_name = rospy.get_param("~object_role")
-    OBSTACLE_STATIC=10,
-    OBSTACLE_DYNAMIC=20,
-    AGENT_OPERATED=100
+    OBSTACLE_STATIC = 10,
+    OBSTACLE_DYNAMIC = 20,
+    AGENT_OPERATED = 100
     if object_role_name == "OBSTACLE_STATIC":
         object_role_id = ObjectRole.OBSTACLE_STATIC
     elif object_role_name == "OBSTACLE_DYNAMIC":
@@ -223,14 +222,16 @@ if __name__ == '__main__':
     elif object_role_name == "AGENT_OPERATED":
         object_role_id = ObjectRole.AGENT_OPERATED
     else:
-        rospy.logwarn("Object Type \"%s\" not known; currently known: \"OBSTACLE_STATIC\", \"OBSTACLE_DYNAMIC\", \"AGENT_OPERATED\""%object_type_name)
+        rospy.logwarn(
+            "Object Type \"%s\" not known; currently known: \"OBSTACLE_STATIC\", \"OBSTACLE_DYNAMIC\", \"AGENT_OPERATED\"" %
+            object_type_name)
     object_role = ObjectRole()
     object_role.type = object_role_id
 
-    publisher = rospy.Publisher( topic, ObjectInitialization, queue_size=6, latch=True )
+    publisher = rospy.Publisher(topic, ObjectInitialization, queue_size=6, latch=True)
 
     path_to_trajectory = rospy.get_param("~trajectory_file")
-    geoCoordinateProjector = ll2if.waitForProjectorPtr(10.,10.)
+    geoCoordinateProjector = ll2if.waitForProjectorPtr(10., 10.)
     import_path(path_to_trajectory, geoCoordinateProjector)
     set_start_and_delta_path(s_start, velocity)
 
@@ -241,7 +242,7 @@ if __name__ == '__main__':
     spawn_time = rospy.Duration(spawn_time_seconds)
 
     if not frame_id_initial_position == frame_id_loc_mgmt:
-        tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0)) #tf buffer length
+        tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0))  # tf buffer length
         tf_listener = tf2_ros.TransformListener(tf_buffer)
 
     # time.sleep(3)
@@ -262,16 +263,15 @@ if __name__ == '__main__':
     pose_stamped.pose.orientation = orientation_from_yaw(0.0)
 
     if not frame_id_initial_position == frame_id_loc_mgmt:
-        rospy.logwarn("Transforming initial_pose of object " + str(object_id) + \
+        rospy.logwarn("Transforming initial_pose of object " + str(object_id) +
                       " from frame " + frame_id_initial_position + " to "
                       "frame " + frame_id_loc_mgmt)
         transform = tf_buffer.lookup_transform(frame_id_loc_mgmt,
-                                               frame_id_initial_position, #source frame
-                                               rospy.Time(0), #get the tf at first available time
-                                               rospy.Duration(3.0)) #wait for 1 second
+                                               frame_id_initial_position,  # source frame
+                                               rospy.Time(0),  # get the tf at first available time
+                                               rospy.Duration(3.0))  # wait for 1 second
         pose_transformed = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
         pose_stamped = pose_transformed
-
 
     obj_init.initial_pose = Pose()
     obj_init.initial_pose.position = pose_stamped.pose.position
@@ -285,21 +285,21 @@ if __name__ == '__main__':
         dpwdt_p = DeltaPoseWithDeltaTime()
         dpwdt_p.delta_time = rospy.Duration(d_t_list[0])
         dpwdt_p.delta_pose.position = position_from_x_y(d_x_list[0], d_y_list[0])
-        alpha = atan2(d_y_list[1]-d_y_list[0], d_x_list[1]-d_x_list[0])
+        alpha = atan2(d_y_list[1] - d_y_list[0], d_x_list[1] - d_x_list[0])
         dpwdt_p.delta_pose.orientation = orientation_from_yaw(alpha)
         obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_p)
 
         dpwdt_n = DeltaPoseWithDeltaTime()
         dpwdt_n.delta_time = rospy.Duration(d_t_list[1])
         dpwdt_n.delta_pose.position = position_from_x_y(d_x_list[0], d_y_list[0])
-        alpha = atan2(d_y_list[1]-d_y_list[0], d_x_list[1]-d_x_list[0])
+        alpha = atan2(d_y_list[1] - d_y_list[0], d_x_list[1] - d_x_list[0])
         dpwdt_n.delta_pose.orientation = orientation_from_yaw(alpha)
         obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
 
     else:
         for i in range(len(d_x_list)):
             # delta_pose with orientation of previous section
-            if i>0:
+            if i > 0:
                 dpwdt_p = DeltaPoseWithDeltaTime()
                 dpwdt_p.delta_time = rospy.Duration(d_t_list[i])
                 dpwdt_p.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
@@ -308,11 +308,11 @@ if __name__ == '__main__':
                 obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_p)
 
             # delta_pose with orientation of next section
-            if i < len(d_x_list)-1:
+            if i < len(d_x_list) - 1:
                 dpwdt_n = DeltaPoseWithDeltaTime()
                 dpwdt_n.delta_time = rospy.Duration(d_t_list[i])
                 dpwdt_n.delta_pose.position = position_from_x_y(d_x_list[i], d_y_list[i])
-                alpha = atan2(d_y_list[i+1]-d_y_list[i], d_x_list[i+1]-d_x_list[i])
+                alpha = atan2(d_y_list[i + 1] - d_y_list[i], d_x_list[i + 1] - d_x_list[i])
                 dpwdt_n.delta_pose.orientation = orientation_from_yaw(alpha)
                 obj_init.initial_delta_trajectory.delta_poses_with_delta_time.append(dpwdt_n)
 
