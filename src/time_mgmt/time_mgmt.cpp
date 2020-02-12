@@ -48,20 +48,22 @@ TimeMgmt::TimeMgmt(ros::NodeHandle node_handle, ros::NodeHandle private_node_han
     /**
      * Set up publisher & timer
      */
-    clockPub_ = private_node_handle.advertise<rosgraph_msgs::Clock>("/clock", 5);
+    clockPub_ = private_node_handle.advertise<rosgraph_msgs::Clock>("/clock", 1);
     timer_ = private_node_handle.createWallTimer(ros::WallDuration(1.0 / params_.time_resolution / params_.acc_factor),
                                                  &TimeMgmt::timerCallbackSim,
                                                  this,
                                                  false,
                                                  !params_.pause_time);
     startWallTime_ = ros::WallTime::now();
-    startSimTime_ = startSimTime_.fromNSec(startWallTime_.toNSec());
+    startSimTime_.fromSec(startWallTime_.toSec());
+    currentSimTime_ = startSimTime_;
 
     // If simulation starts paused, publish /clock once for ros::Time::now() to be valid
     if (params_.pause_time) {
         rosgraph_msgs::Clock msgClock;
         msgClock.clock = startSimTime_;
         clockPub_.publish(msgClock);
+        ROS_DEBUG_STREAM("Simulation started at time " << startSimTime_ << " with paused time.");
     }
 }
 
@@ -71,8 +73,7 @@ TimeMgmt::TimeMgmt(ros::NodeHandle node_handle, ros::NodeHandle private_node_han
 void TimeMgmt::timerCallbackSim(const ros::WallTimerEvent&) {
     ros::WallDuration currentRealTimeDifference = ros::WallTime::now() - startWallTime_;
     ros::Duration currentSimTimeDifference;
-    currentSimTimeDifference =
-        currentSimTimeDifference.fromNSec(currentRealTimeDifference.toNSec() * params_.acc_factor);
+    currentSimTimeDifference = currentSimTimeDifference.fromSec(currentRealTimeDifference.toSec() * params_.acc_factor);
     currentSimTime_ = startSimTime_ + currentSimTimeDifference;
 
     rosgraph_msgs::Clock msgClock;

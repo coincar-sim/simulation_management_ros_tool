@@ -266,10 +266,19 @@ if __name__ == '__main__':
         rospy.logwarn("Transforming initial_pose of object " + str(object_id) +
                       " from frame " + frame_id_initial_position + " to "
                       "frame " + frame_id_loc_mgmt)
-        transform = tf_buffer.lookup_transform(frame_id_loc_mgmt,
-                                               frame_id_initial_position,  # source frame
-                                               rospy.Time(0),  # get the tf at first available time
-                                               rospy.Duration(3.0))  # wait for 1 second
+        transform = None
+        while not rospy.is_shutdown():
+            try:
+                transform = tf_buffer.lookup_transform(frame_id_loc_mgmt,
+                                                       frame_id_initial_position,  # source frame
+                                                       rospy.Time(0),  # get the tf at first available time
+                                                       rospy.Duration(1.0))  # wait for 1 second
+                break
+            except tf2_ros.LookupException:
+                rospy.logwarn_throttle(3, "Transform from initial_pose of object " + str(object_id) +
+                                          " from frame " + frame_id_initial_position + " to "
+                                          "frame " + frame_id_loc_mgmt + " not yet available.")
+
         pose_transformed = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
         pose_stamped = pose_transformed
 
