@@ -245,7 +245,16 @@ if __name__ == '__main__':
         tf_buffer = tf2_ros.Buffer(rospy.Duration(1200.0))  # tf buffer length
         tf_listener = tf2_ros.TransformListener(tf_buffer)
 
-    # time.sleep(3)
+    # Special treatment for paused start (with rospy.Time.now() being invalid)
+    sim_time_info_sent = False
+    while not rospy.is_shutdown():
+        if rospy.Time.now() == rospy.Time(0):
+            if not sim_time_info_sent:
+                rospy.loginfo("Waiting for valid simulation time.")
+                sim_time_info_sent = True
+            time.sleep(0.01)
+        else:
+            break
 
     obj_init = ObjectInitialization()
     obj_init.header.stamp = rospy.Time.now()

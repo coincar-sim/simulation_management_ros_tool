@@ -43,6 +43,12 @@ LocalizationMgmt::LocalizationMgmt(ros::NodeHandle node_handle, ros::NodeHandle 
     reconfigSrv_.setCallback(boost::bind(&LocalizationMgmt::reconfigureRequest, this, _1, _2));
     startTime = ros::Time::now();
 
+    if (!startTime.isValid()) {
+        ROS_INFO("Waiting for valid simulation time.");
+        ros::Time::waitForValid();
+        startTime = ros::Time::now();
+    }
+
     /**
      * Publishers & subscribers
      */
