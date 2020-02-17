@@ -248,7 +248,7 @@ if __name__ == '__main__':
     # Special treatment for paused start (with rospy.Time.now() being invalid)
     sim_time_info_sent = False
     while not rospy.is_shutdown():
-        if rospy.Time.now() == rospy.Time(0):
+        if rospy.Time.is_zero(rospy.Time.now()):
             if not sim_time_info_sent:
                 rospy.loginfo("Waiting for valid simulation time.")
                 sim_time_info_sent = True
