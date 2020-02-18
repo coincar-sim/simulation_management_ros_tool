@@ -10,7 +10,7 @@ Managing the pose of all objects within the framework.
 
 #### Working Principle
 * objects are initialized via an `ObjectInitialization.msg`
-* they provide their desired motion via a `DeltaTrajectoryWithID.msg`
+* they provide their desired motion via a `DeltaTrajectoryWithID.msg` or `AbsoluteTrajectoryWithID.msg`
 * the management keeps track of the current position and interpolates linearly along the desired motion
 * the ground truth poses of all objects are published via an `ObjectStateArray.msg`
 
@@ -44,11 +44,11 @@ Providing the simulation time.
 Enabling the initialization of an object.
 
 #### Working Principle
-* reads a path, a hull and settings from a launchfile
+* reads a path (or start and goal lanelet), a hull and further settings from a launchfile
 * creates an `ObjectInitialization.msg` from this information and publishes it (for the localization management)
 
 #### Settings
-* object_id, initial (constant) velocity, path, frame in which the path is given, frame of the localization management, start point along path, hull, object type (car, ...), object role (operated agent, dynamic obstacle, ...), spawn time, navsatfix_topic for coordinate transformation, initialization topic
+* object_id, initial (constant) velocity, path (or start and goal lanelet), frame of the localization management, start point along path, hull, object type (car, ...), object role (operated agent, dynamic obstacle, ...), spawn time, initialization topic
 * see [launch/object_initialization.launch](launch/object_initialization.launch) and [scripts/object_initialization.py](scripts/object_initialization.py) for details
 * see `simulation_initialization_ros_tool` for a sample configuration
 
