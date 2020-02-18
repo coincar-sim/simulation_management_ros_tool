@@ -181,6 +181,9 @@ def position_from_x_y(x, y):
 
 
 def lanelet_id_from_param_server(param_key):
+    '''
+    See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md
+    '''
     assert(param_key, str)
     if not rospy.has_param(param_key):
         rospy.logerr("Cannot retreive \"" + "\" from param server. Shutting down!")
@@ -196,8 +199,9 @@ def lanelet_id_from_param_server(param_key):
             return lanelet_id
         except BaseException:
             rospy.logerr(
+                "Error reading " +
                 param_key +
-                " must be of type int (e.g. \"123\") or contain the word \"long\" for ids that are too long for xmlrpclib.py (e.g. \"12345678910111213long\") but is \"" +
+                " from parameter server. See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md. Value is \"" +
                 lanelet_id_string_with_long +
                 "\". Shutting down!")
             exit()
