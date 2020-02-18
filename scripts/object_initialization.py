@@ -91,7 +91,8 @@ def import_hull(xml_file):
 
 
 def import_path(xml_file, geoCoordinateProjector):
-    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start, velocity
+    x_list = list()
+    y_list = list()
 
     path_osm = lanelet2.io.load(xml_file, geoCoordinateProjector)
 
@@ -106,9 +107,11 @@ def import_path(xml_file, geoCoordinateProjector):
             x_list.append(xy_point.x)
             y_list.append(xy_point.y)
 
+    return x_list, y_list
 
-def set_start_and_delta_path(s_start_on_path, velocity):
-    global x_list, y_list, d_x_list, d_y_list, d_t_list, x_start, y_start
+
+def set_start_and_delta_path(s_start_on_path, velocity, x_list, y_list):
+    global d_x_list, d_y_list, d_t_list, x_start, y_start
 
     i_start = 0
     scale = 0.0
@@ -177,9 +180,44 @@ def position_from_x_y(x, y):
     return position
 
 
+def lanelet_id_from_param_server(param_key):
+    assert(param_key, str)
+    if not rospy.has_param(param_key):
+        rospy.logerr("Cannot retreive \"" + "\" from param server. Shutting down!")
+        exit()
+    try:
+        lanelet_id = long(rospy.get_param(param_key))
+        return lanelet_id
+    except BaseException:
+        try:
+            lanelet_id_string_with_long = str(rospy.get_param(param_key))
+            lanelet_id_string_with_long = lanelet_id_string_with_long.replace("long", "")
+            lanelet_id = long(lanelet_id_string_with_long)
+            return lanelet_id
+        except BaseException:
+            rospy.logerr(
+                param_key +
+                " must be of type int (e.g. \"123\") or contain the word \"long\" for ids that are too long for xmlrpclib.py (e.g. \"12345678910111213long\") but is \"" +
+                lanelet_id_string_with_long +
+                "\". Shutting down!")
+            exit()
+
+
 if __name__ == '__main__':
 
     rospy.init_node('object_initialization')
+
+    init_from_lanelets = False
+    lanelet_id_start = None
+    lanelet_id_goal = None
+    if rospy.has_param("~lanelet_id_start") or rospy.has_param("~lanelet_id_goal"):
+        lanelet_id_start = lanelet_id_from_param_server("~lanelet_id_start")
+        lanelet_id_goal = lanelet_id_from_param_server("~lanelet_id_goal")
+        init_from_lanelets = True
+
+    if init_from_lanelets and rospy.has_param("~trajectory_file"):
+        rospy.logerr("Initialization works either with lanelets or with trajectory, not both. Shutting down!")
+        exit()
 
     ll2if = lanelet2_interface_ros.Lanelet2InterfaceRos()
     frame_id_initial_position = ll2if.waitForFrameIdMap(10., 10.)
@@ -230,10 +268,43 @@ if __name__ == '__main__':
 
     publisher = rospy.Publisher(topic, ObjectInitialization, queue_size=6, latch=True)
 
-    path_to_trajectory = rospy.get_param("~trajectory_file")
-    geoCoordinateProjector = ll2if.waitForProjectorPtr(10., 10.)
-    import_path(path_to_trajectory, geoCoordinateProjector)
-    set_start_and_delta_path(s_start, velocity)
+    x_list = None
+    y_list = None
+    if init_from_lanelets:
+        ll_map = ll2if.waitForNonConstMapPtr(10., 30.)  # pull with 10Hz for max. 10s
+        traffic_rules = lanelet2.traffic_rules.create(lanelet2.traffic_rules.Locations.Germany,
+                                                      lanelet2.traffic_rules.Participants.Vehicle)
+        graph = lanelet2.routing.RoutingGraph(ll_map, traffic_rules)
+        route = None
+        try:
+            start_lanelet = ll_map.laneletLayer[lanelet_id_start]
+            goal_lanelet = ll_map.laneletLayer[lanelet_id_goal]
+            route = graph.getRoute(start_lanelet, goal_lanelet, 0, False)  # No lane changes
+        except Exception as e:
+            rospy.logerr("Error in finding route: \"" + e.message + "\". Shutting down!")
+            exit()
+        if route is None:
+            rospy.logerr(
+                "No route found from lanelet \"" +
+                str(start_lanelet) +
+                "\" to \"" +
+                str(goal_lanelet) +
+                "\". Shutting down!")
+            exit()
+        assert(route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
+        path = route.shortestPath()
+        lanelet_sequence = path.getRemainingLane(start_lanelet)
+        x_list = list()
+        y_list = list()
+        for pt in lanelet_sequence.centerline:
+            x_list.append(pt.x)
+            y_list.append(pt.y)
+    else:
+        path_to_trajectory = rospy.get_param("~trajectory_file")
+        geoCoordinateProjector = ll2if.waitForProjectorPtr(10., 30.)
+        x_list, y_list = import_path(path_to_trajectory, geoCoordinateProjector)
+
+    set_start_and_delta_path(s_start, velocity, x_list, y_list)
 
     path_to_hull = rospy.get_param("~hull_file")
     hull = import_hull(path_to_hull)
