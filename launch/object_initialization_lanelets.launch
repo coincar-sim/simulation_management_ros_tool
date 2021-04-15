@@ -3,8 +3,8 @@
 <!-- vehicle initialization arguments -->
 <arg name="object_id" />
 <arg name="object_initialization_topic_with_ns" />
-<arg name="lanelet_id_start" /> <!-- see simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md -->
-<arg name="lanelet_id_goal" /> <!-- see simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md -->
+<arg name="lanelet_id_start" /> <!-- see rosinterface_handler/doc/HowToUseLongParameters.md -->
+<arg name="lanelet_id_goal" /> <!-- see rosinterface_handler/doc/HowToUseLongParameters.md -->
 <arg name="initial_v" />
 <arg name="s_start" />
 <arg name="hull_file" />

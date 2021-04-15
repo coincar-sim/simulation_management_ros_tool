@@ -182,26 +182,27 @@ def position_from_x_y(x, y):
 
 def lanelet_id_from_param_server(param_key):
     '''
-    See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md
+    See rosinterface_handler/doc/HowToUseLongParameters.md
+    todo: use rosinterface_handler here!
     '''
     assert(param_key, str)
     if not rospy.has_param(param_key):
         rospy.logerr("Cannot retreive \"" + "\" from param server. Shutting down!")
         exit()
     try:
-        lanelet_id = long(rospy.get_param(param_key))
+        lanelet_id = int(rospy.get_param(param_key))
         return lanelet_id
     except BaseException:
         try:
             lanelet_id_string_with_long = str(rospy.get_param(param_key))
-            lanelet_id_string_with_long = lanelet_id_string_with_long.replace("long", "")
-            lanelet_id = long(lanelet_id_string_with_long)
+            lanelet_id_string_with_long = lanelet_id_string_with_long.replace("L", "")
+            lanelet_id = int(lanelet_id_string_with_long)
             return lanelet_id
         except BaseException:
             rospy.logerr(
                 "Error reading " +
                 param_key +
-                " from parameter server. See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md. Value is \"" +
+                " from parameter server. See rosinterface_handler/doc/HowToUseLongParameters.md. Value is \"" +
                 lanelet_id_string_with_long +
                 "\". Shutting down!")
             exit()
