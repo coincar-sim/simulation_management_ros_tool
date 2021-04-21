@@ -1,0 +1,31 @@
+<launch>
+
+<!-- vehicle initialization arguments -->
+<arg name="object_id" />
+<arg name="object_initialization_topic_with_ns" />
+<arg name="lanelet_id_start" /> <!-- see rosinterface_handler/doc/HowToUseLongParameters.md -->
+<arg name="lanelet_id_goal" /> <!-- see rosinterface_handler/doc/HowToUseLongParameters.md -->
+<arg name="initial_v" />
+<arg name="s_start" />
+<arg name="hull_file" />
+<arg name="object_type" />
+<arg name="object_role" />
+<arg name="spawn_time" default="0.0" />
+<arg name="frame_id_loc_mgmt" />
+
+<node pkg="simulation_management_ros_tool" type="object_initialization.py" name="object_initialization" output="screen" >
+    <param name="object_id" value="$(arg object_id)" />
+    <param name="lanelet_id_start" value="$(arg lanelet_id_start)" />
+    <param name="lanelet_id_goal" value="$(arg lanelet_id_goal)" />
+    <param name="initial_v" value="$(arg initial_v)" />
+    <param name="s_start" value="$(arg s_start)" />
+    <param name="hull_file" value="$(arg hull_file)" />
+    <param name="object_type" value="$(arg object_type)" />
+    <param name="object_role" value="$(arg object_role)" />
+    <param name="spawn_time" value="$(arg spawn_time)" />
+    <param name="frame_id_loc_mgmt" value="$(arg frame_id_loc_mgmt)" />
+
+    <param name="object_initialization_topic" value="$(arg object_initialization_topic_with_ns)" />
+</node>
+
+</launch>
