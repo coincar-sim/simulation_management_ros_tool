@@ -1,10 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package format="2">
   <name>simulation_management_ros_tool</name>
   <version>1.1.0</version>
   <description>Core of coincar-sim</description>
 
   <license>BSD</license>
-  <maintainer email="maximilian.naumann@kit.edu">Maximilian Naumann</maintainer>
+  <maintainer email="eduardo.molinos@kit.edu">Eduardo Molinos</maintainer>
   <author email="maximilian.naumann@kit.edu">Maximilian Naumann</author>
 
   <!-- ROS dependencies -->
