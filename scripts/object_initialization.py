@@ -294,7 +294,7 @@ if __name__ == '__main__':
                 str(start_lanelet) +
                 "\" to \"" +
                 str(goal_lanelet) +
-                "\". Shutting down!")
+                "\". Only routes with exactly one lane (no lane changes) are currently supported. Shutting down!")
             exit()
         assert(route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
         path = route.shortestPath()
