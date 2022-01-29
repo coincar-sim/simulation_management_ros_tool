@@ -281,29 +281,32 @@ if __name__ == '__main__':
                                                       lanelet2.traffic_rules.Participants.Vehicle)
         graph = lanelet2.routing.RoutingGraph(ll_map, traffic_rules)
         route = None
+        x_list = list()
+        y_list = list()
         try:
             start_lanelet = ll_map.laneletLayer[lanelet_id_start]
             goal_lanelet = ll_map.laneletLayer[lanelet_id_goal]
             route = graph.getRoute(start_lanelet, goal_lanelet, 0, False)  # No lane changes
         except Exception as e:
-            rospy.logerr("Error in finding route: \"" + e.message + "\". Shutting down!")
-            exit()
+            rospy.logwarn("Error in finding route: \"" + e.message + "\".")
+            route = None
         if route is None:
-            rospy.logerr(
+            rospy.logwarn(
                 "No route found from lanelet \"" +
                 str(start_lanelet) +
                 "\" to \"" +
                 str(goal_lanelet) +
-                "\". Only routes with exactly one lane (no lane changes) are currently supported. Shutting down!")
-            exit()
-        assert(route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
-        path = route.shortestPath()
-        lanelet_sequence = path.getRemainingLane(start_lanelet)
-        x_list = list()
-        y_list = list()
-        for pt in lanelet_sequence.centerline:
-            x_list.append(pt.x)
-            y_list.append(pt.y)
+                "\". Trying to initialize on the start lanelet only!")
+            for pt in start_lanelet.centerline:
+                x_list.append(pt.x)
+                y_list.append(pt.y)
+        else:
+            assert(route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
+            path = route.shortestPath()
+            lanelet_sequence = path.getRemainingLane(start_lanelet)
+            for pt in lanelet_sequence.centerline:
+                x_list.append(pt.x)
+                y_list.append(pt.y)
     else:
         path_to_trajectory = rospy.get_param("~trajectory_file")
         geoCoordinateProjector = ll2if.waitForProjectorPtr(10., 30.)
