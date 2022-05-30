@@ -246,8 +246,9 @@ if __name__ == '__main__':
     elif object_type_name == "truck":
         object_type_id = ObjectClassification.TRUCK
     else:
-        rospy.logwarn("Object Type \"%s\" not supported; currently supported: " % object_type_name +
-                      "\"car\", \"pedestrian\", \"truck\",\"motorbike\", \"bicycle\"; classifying object as \"unclassified\"")
+        rospy.logwarn(
+            "Object Type \"%s\" not supported; currently supported: " % object_type_name +
+            "\"car\", \"pedestrian\", \"truck\",\"motorbike\", \"bicycle\"; classifying object as \"unclassified\"")
     cwp = ClassWithProbability()
     cwp.classification = object_type_id
     cwp.probability = 1.
