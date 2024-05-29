@@ -185,7 +185,7 @@ def lanelet_id_from_param_server(param_key):
     See rosinterface_handler/doc/HowToUseLongParameters.md
     todo: use rosinterface_handler here!
     '''
-    assert(param_key, str)
+    assert (param_key, str)
     if not rospy.has_param(param_key):
         rospy.logerr("Cannot retreive \"" + "\" from param server. Shutting down!")
         exit()
@@ -221,7 +221,11 @@ if __name__ == '__main__':
         init_from_lanelets = True
 
     if init_from_lanelets and rospy.has_param("~trajectory_file"):
-        rospy.logerr("Initialization works either with lanelets or with trajectory, not both. Shutting down!")
+        rospy.logerr(
+            "Initialization works either with lanelets or with trajectory, not both. Shutting down!"
+            "If you did not define a trajectory_file, it may still be set on the ROS parameter server."
+            "Restart the roscore and try again."
+        )
         exit()
 
     ll2if = lanelet2_interface_ros.Lanelet2InterfaceRos()
@@ -302,7 +306,7 @@ if __name__ == '__main__':
                 x_list.append(pt.x)
                 y_list.append(pt.y)
         else:
-            assert(route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
+            assert (route.numLanes() == 1), "Only routes with exactly one lane (no lane changes) are currently supported."
             path = route.shortestPath()
             lanelet_sequence = path.getRemainingLane(start_lanelet)
             for pt in lanelet_sequence.centerline:
