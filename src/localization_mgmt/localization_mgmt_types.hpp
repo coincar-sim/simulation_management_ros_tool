@@ -84,6 +84,7 @@ private:
     geometry_msgs::Pose currPose_;
 
     automated_driving_msgs::ObjectClassification objectClassification_;
+    automated_driving_msgs::BoundingBox boundingBox_;
     shape_msgs::Mesh hull_;
 
     TRAJECTORY_MODE trajectoryMode_{TRAJECTORY_MODE::NONE};

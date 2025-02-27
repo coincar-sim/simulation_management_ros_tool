@@ -33,6 +33,7 @@
 # ROS Dependencies
 import roslib
 from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, ClassWithProbability, ObjectClassification
+from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, BoundingBox, ClassWithProbability, ObjectClassification
 from simulation_only_msgs.msg import ObjectInitialization, DeltaTrajectoryWithID, ObjectRole
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
