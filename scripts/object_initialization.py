@@ -67,6 +67,7 @@ velocity = None
 object_id = None
 cs = None
 
+
 def mesh_from_bounding_box(bounding_box):
     mesh = Mesh()
 
@@ -82,13 +83,13 @@ def mesh_from_bounding_box(bounding_box):
     # Define the 8 corners of the axis-aligned bounding box (homogeneous coordinates)
     local_corners = numpy.array([
         [-dimensions.x / 2, -dimensions.y / 2, -dimensions.z / 2, 1],
-        [ dimensions.x / 2, -dimensions.y / 2, -dimensions.z / 2, 1],
-        [ dimensions.x / 2,  dimensions.y / 2, -dimensions.z / 2, 1],
-        [-dimensions.x / 2,  dimensions.y / 2, -dimensions.z / 2, 1],
-        [-dimensions.x / 2, -dimensions.y / 2,  dimensions.z / 2, 1],
-        [ dimensions.x / 2, -dimensions.y / 2,  dimensions.z / 2, 1],
-        [ dimensions.x / 2,  dimensions.y / 2,  dimensions.z / 2, 1],
-        [-dimensions.x / 2,  dimensions.y / 2,  dimensions.z / 2, 1]
+        [dimensions.x / 2, -dimensions.y / 2, -dimensions.z / 2, 1],
+        [dimensions.x / 2, dimensions.y / 2, -dimensions.z / 2, 1],
+        [-dimensions.x / 2, dimensions.y / 2, -dimensions.z / 2, 1],
+        [-dimensions.x / 2, -dimensions.y / 2, dimensions.z / 2, 1],
+        [dimensions.x / 2, -dimensions.y / 2, dimensions.z / 2, 1],
+        [dimensions.x / 2, dimensions.y / 2, dimensions.z / 2, 1],
+        [-dimensions.x / 2, dimensions.y / 2, dimensions.z / 2, 1]
     ]).T
 
     # Apply affine transformation
