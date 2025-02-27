@@ -67,6 +67,55 @@ velocity = None
 object_id = None
 cs = None
 
+def mesh_from_bounding_box(bounding_box):
+    mesh = Mesh()
+
+    pose = bounding_box.center
+    dimensions = bounding_box.dimensions
+
+    quaternion = [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]
+    translation = [pose.position.x, pose.position.y, pose.position.z]
+
+    transform_matrix = tf.transformations.quaternion_matrix(quaternion)
+    transform_matrix[:3, 3] = translation
+
+    # Define the 8 corners of the axis-aligned bounding box (homogeneous coordinates)
+    local_corners = numpy.array([
+        [-dimensions.x / 2, -dimensions.y / 2, -dimensions.z / 2, 1],
+        [ dimensions.x / 2, -dimensions.y / 2, -dimensions.z / 2, 1],
+        [ dimensions.x / 2,  dimensions.y / 2, -dimensions.z / 2, 1],
+        [-dimensions.x / 2,  dimensions.y / 2, -dimensions.z / 2, 1],
+        [-dimensions.x / 2, -dimensions.y / 2,  dimensions.z / 2, 1],
+        [ dimensions.x / 2, -dimensions.y / 2,  dimensions.z / 2, 1],
+        [ dimensions.x / 2,  dimensions.y / 2,  dimensions.z / 2, 1],
+        [-dimensions.x / 2,  dimensions.y / 2,  dimensions.z / 2, 1]
+    ]).T
+
+    # Apply affine transformation
+    world_corners = numpy.dot(transform_matrix, local_corners).T
+
+    for corner in world_corners:
+        p = Point(x=corner[0], y=corner[1], z=corner[2])
+        mesh.vertices.append(p)
+
+    triangles = [
+        (0, 1, 2), (0, 2, 3),  # Bottom face
+        (4, 5, 6), (4, 6, 7),  # Top face
+        (1, 2, 6), (1, 6, 5),  # Front face
+        (3, 0, 4), (3, 4, 7),  # Back face
+        (2, 3, 7), (2, 7, 6),  # Left face
+        (0, 1, 5), (0, 5, 4)   # Right face
+    ]
+
+    for triangle in triangles:
+        mesh_triangle = MeshTriangle()
+        mesh_triangle.vertex_indices[0] = triangle[0]
+        mesh_triangle.vertex_indices[1] = triangle[1]
+        mesh_triangle.vertex_indices[2] = triangle[2]
+        mesh.triangles.append(mesh_triangle)
+
+    return mesh
+
 
 def import_object_geometry(xml_file):
     root = xml.etree.ElementTree.parse(xml_file).getroot()
@@ -89,6 +138,10 @@ def import_object_geometry(xml_file):
     bounding_box.dimensions.z = float(bounding_box_dimensions.get('z'))
 
     mesh = Mesh()
+    mesh_entry = root.find('mesh')
+    if mesh_entry is None:
+        return bounding_box, mesh_from_bounding_box(bounding_box)
+
     for vertice_entry in root.findall('mesh/vertice'):
         vertice = Point()
         vertice.x = float(vertice_entry.get('x'))
