@@ -32,7 +32,6 @@
 
 # ROS Dependencies
 import roslib
-from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, ClassWithProbability, ObjectClassification
 from automated_driving_msgs.msg import ObjectStateArray, MotionState, ObjectState, DeltaPoseWithDeltaTime, BoundingBox, ClassWithProbability, ObjectClassification
 from simulation_only_msgs.msg import ObjectInitialization, DeltaTrajectoryWithID, ObjectRole
 from geometry_msgs.msg import Pose
@@ -69,26 +68,42 @@ object_id = None
 cs = None
 
 
-def import_hull(xml_file):
-    e = xml.etree.ElementTree.parse(xml_file).getroot()
+def import_object_geometry(xml_file):
+    root = xml.etree.ElementTree.parse(xml_file).getroot()
+
+    bounding_box = BoundingBox()
+    bounding_box_center_position = root.find('bounding_box/center/position')
+    bounding_box.center.position.x = float(bounding_box_center_position.get('x'))
+    bounding_box.center.position.y = float(bounding_box_center_position.get('y'))
+    bounding_box.center.position.z = float(bounding_box_center_position.get('z'))
+
+    bounding_box_center_orientation = root.find('bounding_box/center/orientation')
+    bounding_box.center.orientation.x = float(bounding_box_center_orientation.get('x'))
+    bounding_box.center.orientation.y = float(bounding_box_center_orientation.get('y'))
+    bounding_box.center.orientation.z = float(bounding_box_center_orientation.get('z'))
+    bounding_box.center.orientation.w = float(bounding_box_center_orientation.get('w'))
+
+    bounding_box_dimensions = root.find('bounding_box/dimensions')
+    bounding_box.dimensions.x = float(bounding_box_dimensions.get('x'))
+    bounding_box.dimensions.y = float(bounding_box_dimensions.get('y'))
+    bounding_box.dimensions.z = float(bounding_box_dimensions.get('z'))
 
     mesh = Mesh()
-
-    for vertice_entry in e.findall('vertice'):
+    for vertice_entry in root.findall('mesh/vertice'):
         vertice = Point()
         vertice.x = float(vertice_entry.get('x'))
         vertice.y = float(vertice_entry.get('y'))
         vertice.z = float(vertice_entry.get('z'))
         mesh.vertices.append(vertice)
 
-    for triangle_entry in e.findall('triangle'):
+    for triangle_entry in root.findall('mesh/triangle'):
         triangle = MeshTriangle()
         triangle.vertex_indices[0] = int(triangle_entry.get('id0'))
         triangle.vertex_indices[1] = int(triangle_entry.get('id1'))
         triangle.vertex_indices[2] = int(triangle_entry.get('id2'))
         mesh.triangles.append(triangle)
 
-    return mesh
+    return bounding_box, mesh
 
 
 def import_path(xml_file, geoCoordinateProjector):
@@ -320,8 +335,8 @@ if __name__ == '__main__':
 
     set_start_and_delta_path(s_start, velocity, x_list, y_list)
 
-    path_to_hull = rospy.get_param("~hull_file")
-    hull = import_hull(path_to_hull)
+    path_to_object_geometry_file = rospy.get_param("~object_geometry_file")
+    bounding_box, hull = import_object_geometry(path_to_object_geometry_file)
 
     spawn_time_seconds = rospy.get_param("~spawn_time")
     spawn_time = rospy.Duration(spawn_time_seconds)
@@ -346,6 +361,7 @@ if __name__ == '__main__':
     obj_init.header.frame_id = frame_id_loc_mgmt
     obj_init.object_id = object_id
 
+    obj_init.bounding_box = bounding_box
     obj_init.hull = hull
     obj_init.classification = object_classification
     obj_init.role = object_role

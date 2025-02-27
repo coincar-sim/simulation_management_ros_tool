@@ -7,7 +7,7 @@
 <arg name="lanelet_id_goal" /> <!-- see rosinterface_handler/doc/HowToUseLongParameters.md -->
 <arg name="initial_v" />
 <arg name="s_start" />
-<arg name="hull_file" />
+<arg name="object_geometry_file" />
 <arg name="object_type" />
 <arg name="object_role" />
 <arg name="spawn_time" default="0.0" />
@@ -19,7 +19,7 @@
     <param name="lanelet_id_goal" value="$(arg lanelet_id_goal)" />
     <param name="initial_v" value="$(arg initial_v)" />
     <param name="s_start" value="$(arg s_start)" />
-    <param name="hull_file" value="$(arg hull_file)" />
+    <param name="object_geometry_file" value="$(arg object_geometry_file)" />
     <param name="object_type" value="$(arg object_type)" />
     <param name="object_role" value="$(arg object_role)" />
     <param name="spawn_time" value="$(arg spawn_time)" />
