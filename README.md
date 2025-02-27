@@ -48,7 +48,7 @@ Enabling the initialization of an object.
 * creates an `ObjectInitialization.msg` from this information and publishes it (for the localization management)
 
 #### Settings
-* object_id, initial (constant) velocity, path (or start and goal lanelet), frame of the localization management, start point along path, hull, object type (car, ...), object role (operated agent, dynamic obstacle, ...), spawn time, initialization topic
+* object_id, initial (constant) velocity, path (or start and goal lanelet), frame of the localization management, start point along path, object geometry, object type (car, ...), object role (operated agent, dynamic obstacle, ...), spawn time, initialization topic
 * see [launch/object_initialization.launch](launch/object_initialization.launch) and [scripts/object_initialization.py](scripts/object_initialization.py) for details
 * see `simulation_initialization_ros_tool` for a sample configuration
 
