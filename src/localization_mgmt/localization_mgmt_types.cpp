@@ -56,6 +56,7 @@ DynamicObject::DynamicObject(const simulation_only_msgs::ObjectInitialization& i
 
     frameId_ = frameId;
     childFrameId_ = frameIdObjectsPrefix + std::to_string(objectID_).c_str();
+    boundingBox_ = initMsg.bounding_box;
     hull_ = initMsg.hull;
 
     switch (initMsg.role.type) {
@@ -245,6 +246,7 @@ automated_driving_msgs::ObjectState DynamicObject::toMsg(const ros::Time& timest
     os.motion_state.header.stamp = timestamp;
     os.motion_state.header.frame_id = frameId_;
     os.motion_state.child_frame_id = childFrameId_;
+    os.bounding_box = boundingBox_;
     os.hull = hull_;
     return os;
     // check if contains NANs
